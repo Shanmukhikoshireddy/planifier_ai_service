@@ -5,6 +5,4 @@ class JobRequest(BaseModel):
 
     department: str
 
-    designation: str
-
     job_description: str

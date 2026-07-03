@@ -9,9 +9,7 @@ class ProfileRepository(BaseRepository):
 
         super().__init__()
 
-        self.collection = self.db[
-            "profiles"
-        ]
+        self.collection = self.db["profiles"]
 
     # =====================================================
     # Save Profile
@@ -23,25 +21,34 @@ class ProfileRepository(BaseRepository):
 
         resume_id: str,
 
-        resume,
-
-        department: str,
-
-        designation: str,
+        resume: dict,
 
         resume_path: str,
+        file_hash: str,
 
     ):
+        """
+        Save parsed resume profile.
+
+        Department is taken directly from the
+        extracted resume JSON.
+        """
 
         document = resume.copy()
 
         document["resume_id"] = resume_id
 
-        document["department"] = department
+        document["department"] = resume.get(
 
-        document["designation"] = designation
+            "department",
+
+            "Unknown",
+
+        )
 
         document["resume_path"] = resume_path
+        document["file_hash"] = file_hash
+
         document["is_deleted"] = False
 
         document["deleted_at"] = None
@@ -103,6 +110,7 @@ class ProfileRepository(BaseRepository):
             {
 
                 "resume_id": resume_id,
+
                 "is_deleted": False,
 
             },
@@ -121,11 +129,11 @@ class ProfileRepository(BaseRepository):
 
     def get_all_profiles(
 
-    self,
+        self,
 
-    filters: dict | None = None,
+        filters: dict | None = None,
 
-):
+    ):
 
         if filters is None:
 
@@ -229,19 +237,17 @@ class ProfileRepository(BaseRepository):
 
         department: str | None = None,
 
-        designation: str | None = None,
-
     ):
 
-        filters = {}
+        filters = {
+
+            "is_deleted": False
+
+        }
 
         if department:
 
             filters["department"] = department
-
-        if designation:
-
-            filters["designation"] = designation
 
         return list(
 
@@ -258,6 +264,7 @@ class ProfileRepository(BaseRepository):
             )
 
         )
+
     # =====================================================
     # Soft Delete Profile
     # =====================================================

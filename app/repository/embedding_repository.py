@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.repository.base_repository import BaseRepository
 
@@ -9,35 +9,32 @@ class EmbeddingRepository(BaseRepository):
 
         super().__init__()
 
-        self.collection = self.db[
-            "embeddings"
-        ]
+        self.collection = self.db["embeddings"]
 
     # =====================================================
     # Save Embedding
     # =====================================================
 
     def save_embedding(
-
         self,
-
         resume_id: str,
-
-        upload_job_id: str,
-
         embedding: list,
-
         embedding_model: str,
-
         dimension: int,
-
+        department: str,
+        uploaded_at: datetime,
     ):
+        """
+        Save embedding generated for a resume.
+
+        In the new MinIO event-driven architecture,
+        there is no UploadJob, so upload_job_id
+        has been removed.
+        """
 
         document = {
 
             "resume_id": resume_id,
-
-            "upload_job_id": upload_job_id,
 
             "embedding": embedding,
 
@@ -45,26 +42,23 @@ class EmbeddingRepository(BaseRepository):
 
             "dimension": dimension,
 
+            "department": department,
+
+            "uploaded_at": uploaded_at,
+
             "created_at": datetime.utcnow(),
 
         }
 
-        self.collection.insert_one(
-
-            document
-
-        )
+        self.collection.insert_one(document)
 
     # =====================================================
     # Get Embedding
     # =====================================================
 
     def get_embedding(
-
         self,
-
         resume_id: str,
-
     ):
 
         return self.collection.find_one(
@@ -88,11 +82,8 @@ class EmbeddingRepository(BaseRepository):
     # =====================================================
 
     def delete_embedding(
-
         self,
-
         resume_id: str,
-
     ):
 
         self.collection.delete_one(
@@ -106,7 +97,7 @@ class EmbeddingRepository(BaseRepository):
         )
 
     # =====================================================
-    # Vector Search
+    # MongoDB Atlas Vector Search
     # =====================================================
 
     def search_similar_embeddings(
@@ -115,9 +106,61 @@ class EmbeddingRepository(BaseRepository):
 
         embedding: list,
 
-        top_n: int = 100,
+        department: str,
+
+        search_period: str,
 
     ):
+
+        filter_query = {
+
+            "department": department
+
+        }
+
+        if search_period != "ALL":
+
+            now = datetime.utcnow()
+
+            if search_period == "LAST_WEEK":
+
+                filter_query["uploaded_at"] = {
+
+                    "$gte": now - timedelta(days=7)
+
+                }
+
+            elif search_period == "LAST_MONTH":
+
+                filter_query["uploaded_at"] = {
+
+                    "$gte": now - timedelta(days=30)
+
+                }
+
+            elif search_period == "LAST_3_MONTHS":
+
+                filter_query["uploaded_at"] = {
+
+                    "$gte": now - timedelta(days=90)
+
+                }
+
+            elif search_period == "LAST_6_MONTHS":
+
+                filter_query["uploaded_at"] = {
+
+                    "$gte": now - timedelta(days=180)
+
+                }
+
+            elif search_period == "LAST_YEAR":
+
+                filter_query["uploaded_at"] = {
+
+                    "$gte": now - timedelta(days=365)
+
+                }
 
         pipeline = [
 
@@ -131,9 +174,11 @@ class EmbeddingRepository(BaseRepository):
 
                     "queryVector": embedding,
 
-                    "numCandidates": top_n * 5,
+                    "filter": filter_query,
 
-                    "limit": top_n,
+                    "numCandidates": 10000,
+
+                    "limit": 10000,
 
                 }
 
@@ -147,17 +192,19 @@ class EmbeddingRepository(BaseRepository):
 
                     "resume_id": 1,
 
-                    "upload_job_id": 1,
+                    "department": 1,
+
+                    "uploaded_at": 1,
 
                     "embedding_score": {
 
                         "$meta": "vectorSearchScore"
 
-                    }
+                    },
 
                 }
 
-            }
+            },
 
         ]
 
@@ -200,5 +247,69 @@ class EmbeddingRepository(BaseRepository):
         self.collection.delete_many(
 
             {}
+
+        )
+
+    # =====================================================
+    # Update Embedding
+    # =====================================================
+
+    def update_embedding(
+
+        self,
+
+        resume_id: str,
+
+        embedding: list,
+
+    ):
+
+        self.collection.update_one(
+
+            {
+
+                "resume_id": resume_id
+
+            },
+
+            {
+
+                "$set": {
+
+                    "embedding": embedding,
+
+                    "updated_at": datetime.utcnow(),
+
+                }
+
+            }
+
+        )
+
+    # =====================================================
+    # Embedding Exists
+    # =====================================================
+
+    def embedding_exists(
+
+        self,
+
+        resume_id: str,
+
+    ) -> bool:
+
+        return (
+
+            self.collection.count_documents(
+
+                {
+
+                    "resume_id": resume_id
+
+                }
+
+            )
+
+            > 0
 
         )

@@ -11,37 +11,25 @@ class JobRepository(BaseRepository):
 
         super().__init__()
 
-        self.collection = self.db[
-            "jobs"
-        ]
+        self.collection = self.db["jobs"]
 
     # =====================================================
     # Create Job
     # =====================================================
 
     def create_job(
-
         self,
-
-        job,
-
-        embedding,
-
+        job: dict,
+        embedding: list,
         department: str,
-
-        designation: str,
-
         search_period: str,
-
     ):
 
         document = {
 
-            "title": job.title,
+            "title": job.get("title", ""),
 
             "department": department,
-
-            "designation": designation,
 
             "job_description": job,
 
@@ -51,6 +39,8 @@ class JobRepository(BaseRepository):
 
             "created_at": datetime.utcnow(),
 
+            "updated_at": datetime.utcnow(),
+
             "status": "PROCESSING",
 
             "cached": False,
@@ -59,48 +49,29 @@ class JobRepository(BaseRepository):
 
         }
 
-        result = self.collection.insert_one(
+        result = self.collection.insert_one(document)
 
-            document
-
-        )
-
-        return str(
-
-            result.inserted_id
-
-        )
+        return str(result.inserted_id)
 
     # =====================================================
     # Update Job
     # =====================================================
 
     def update_job(
-
         self,
-
         job_id: str,
-
         update_fields: dict,
-
     ):
 
         update_fields["updated_at"] = datetime.utcnow()
 
         self.collection.update_one(
-
             {
-
                 "_id": ObjectId(job_id)
-
             },
-
             {
-
                 "$set": update_fields
-
             }
-
         )
 
     # =====================================================
@@ -108,121 +79,146 @@ class JobRepository(BaseRepository):
     # =====================================================
 
     def get_job(
-
         self,
-
         job_id: str,
-
     ):
 
-        return self.collection.find_one(
-
+        document = self.collection.find_one(
             {
-
                 "_id": ObjectId(job_id)
-
-            },
-
-            {
-
-                "_id": 0
-
             }
-
         )
+
+        if not document:
+            return None
+
+        document["_id"] = str(document["_id"])
+
+        # ---------------------------------------------
+        # Flatten Parsed Job
+        # ---------------------------------------------
+
+        parsed_job = document.get(
+            "job_description",
+            {}
+        )
+
+        return {
+
+            "job_id": document["_id"],
+
+            "title": parsed_job.get(
+                "title",
+                ""
+            ),
+
+            "department": document.get(
+                "department",
+                ""
+            ),
+
+            "experience": parsed_job.get(
+                "experience",
+                ""
+            ),
+
+            "education": parsed_job.get(
+                "education",
+                ""
+            ),
+
+            "skills": parsed_job.get(
+                "skills",
+                []
+            ),
+
+            "certifications": parsed_job.get(
+                "certifications",
+                []
+            ),
+
+            "responsibilities": parsed_job.get(
+                "responsibilities",
+                []
+            ),
+
+            "qualifications": parsed_job.get(
+                "qualifications",
+                []
+            ),
+
+            "nice_to_have": parsed_job.get(
+                "nice_to_have",
+                []
+            ),
+
+            "status": document.get(
+                "status"
+            ),
+
+            "created_at": document.get(
+                "created_at"
+            ),
+
+        }
 
     # =====================================================
     # Get All Jobs
     # =====================================================
 
-    def get_all_jobs(
+    def get_all_jobs(self):
 
-        self,
+        jobs = list(
 
-    ):
+            self.collection.find()
 
-        return list(
-
-            self.collection.find(
-
-                {},
-
-                {
-
-                    "_id": 0
-
-                }
-
-            ).sort(
-
-                "created_at",
-
-                -1,
-
-            )
+            .sort("created_at", -1)
 
         )
+
+        for job in jobs:
+
+            job["_id"] = str(job["_id"])
+
+        return jobs
 
     # =====================================================
     # Delete Job
     # =====================================================
 
     def delete_job(
-
         self,
-
         job_id: str,
-
     ):
 
         self.collection.delete_one(
-
             {
-
                 "_id": ObjectId(job_id)
-
             }
-
         )
 
     # =====================================================
     # Count Jobs
     # =====================================================
 
-    def count_jobs(
+    def count_jobs(self):
 
-        self,
-
-    ):
-
-        return self.collection.count_documents(
-
-            {}
-
-        )
+        return self.collection.count_documents({})
 
     # =====================================================
     # Find Similar Job (Cache)
     # =====================================================
 
     def find_similar_job(
-
         self,
-
         embedding: list,
-
         department: str,
-
-        designation: str,
-
         threshold: float = 0.95,
-
     ):
 
         pipeline = [
 
             {
-
                 "$vectorSearch": {
 
                     "index": "job_vector_index",
@@ -231,24 +227,20 @@ class JobRepository(BaseRepository):
 
                     "queryVector": embedding,
 
-                    "numCandidates": 10,
+                    "numCandidates": 20,
 
                     "limit": 1,
 
                     "filter": {
 
-                        "department": department,
-
-                        "designation": designation,
+                        "department": department
 
                     }
 
                 }
-
             },
 
             {
-
                 "$project": {
 
                     "_id": 1,
@@ -257,8 +249,6 @@ class JobRepository(BaseRepository):
 
                     "department": 1,
 
-                    "designation": 1,
-
                     "score": {
 
                         "$meta": "vectorSearchScore"
@@ -266,7 +256,6 @@ class JobRepository(BaseRepository):
                     }
 
                 }
-
             }
 
         ]
@@ -292,15 +281,12 @@ class JobRepository(BaseRepository):
         return jobs[0]
 
     # =====================================================
-    # Update Cache Flag
+    # Mark Cached
     # =====================================================
 
     def mark_as_cached(
-
         self,
-
         job_id: str,
-
     ):
 
         self.collection.update_one(
@@ -315,7 +301,9 @@ class JobRepository(BaseRepository):
 
                 "$set": {
 
-                    "cached": True
+                    "cached": True,
+
+                    "updated_at": datetime.utcnow(),
 
                 }
 
@@ -324,17 +312,13 @@ class JobRepository(BaseRepository):
         )
 
     # =====================================================
-    # Update Search Result Count
+    # Update Result Count
     # =====================================================
 
     def update_result_count(
-
         self,
-
         job_id: str,
-
         count: int,
-
     ):
 
         self.collection.update_one(
@@ -349,7 +333,9 @@ class JobRepository(BaseRepository):
 
                 "$set": {
 
-                    "search_result_count": count
+                    "search_result_count": count,
+
+                    "updated_at": datetime.utcnow(),
 
                 }
 
@@ -358,17 +344,13 @@ class JobRepository(BaseRepository):
         )
 
     # =====================================================
-    # Update Job Status
+    # Update Status
     # =====================================================
 
     def update_status(
-
         self,
-
         job_id: str,
-
         status: str,
-
     ):
 
         self.collection.update_one(
@@ -383,10 +365,92 @@ class JobRepository(BaseRepository):
 
                 "$set": {
 
-                    "status": status
+                    "status": status,
+
+                    "updated_at": datetime.utcnow(),
 
                 }
 
             }
 
         )
+
+    # =====================================================
+    # Get Processing Jobs
+    # =====================================================
+
+    def get_processing_jobs(self):
+
+        jobs = list(
+
+            self.collection.find(
+
+                {
+
+                    "status": "PROCESSING"
+
+                }
+
+            )
+
+        )
+
+        for job in jobs:
+
+            job["_id"] = str(job["_id"])
+
+        return jobs
+
+    # =====================================================
+    # Get Completed Jobs
+    # =====================================================
+
+    def get_completed_jobs(self):
+
+        jobs = list(
+
+            self.collection.find(
+
+                {
+
+                    "status": "COMPLETED"
+
+                }
+
+            ).sort(
+
+                "created_at",
+
+                -1,
+
+            )
+
+        )
+
+        for job in jobs:
+
+            job["_id"] = str(job["_id"])
+
+        return jobs
+
+    # =====================================================
+    # Latest Job
+    # =====================================================
+
+    def get_latest_job(self):
+
+        job = self.collection.find_one(
+
+            sort=[
+
+                ("created_at", -1)
+
+            ]
+
+        )
+
+        if job:
+
+            job["_id"] = str(job["_id"])
+
+        return job

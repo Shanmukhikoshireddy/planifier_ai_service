@@ -129,8 +129,7 @@ class SearchRepository(BaseRepository):
 
                     "reasoning_generated": False,
 
-                    "reasoning": None,
-
+                    "reasoning": candidate.get("reasoning",None),
                     "created_at": datetime.utcnow(),
 
                     "updated_at": datetime.utcnow(),
@@ -198,24 +197,25 @@ class SearchRepository(BaseRepository):
         resume_id: str,
 
     ):
+        
 
         return self.collection.find_one(
 
-            {
+        {
 
-                "job_id": job_id,
+            "job_id": job_id,
 
-                "resume_id": resume_id,
+            "resume_id": resume_id,
 
-            },
+        },
 
-            {
+        {
 
-                "_id": 0
+            "_id": 0
 
-            }
+        }
 
-        )
+    )
 
     # =====================================================
     # Shortlist Candidate
@@ -326,6 +326,7 @@ class SearchRepository(BaseRepository):
                     "reasoning": reasoning,
 
                     "reasoning_generated": True,
+                    "reasoning_generated_at": datetime.utcnow(),
 
                     "updated_at": datetime.utcnow(),
 
@@ -416,82 +417,82 @@ class SearchRepository(BaseRepository):
         )
     
     # =====================================================
-# Get Shortlisted Candidates
-# =====================================================
+    # Get Shortlisted Candidates
+    # =====================================================
 
-def get_shortlisted_candidates(
+    def get_shortlisted_candidates(
 
-    self,
+        self,
 
-    job_id: str,
+        job_id: str,
 
-):
+    ):
 
-    return list(
+        return list(
 
-        self.collection.find(
+            self.collection.find(
 
-            {
+                {
 
-                "job_id": job_id,
+                    "job_id": job_id,
 
-                "candidate_status": "SHORTLISTED",
+                    "candidate_status": "SHORTLISTED",
 
-            },
+                },
 
-            {
+                {
 
-                "_id": 0,
+                    "_id": 0,
 
-            },
+                },
 
-        ).sort(
+            ).sort(
 
-            "final_score",
+                "final_score",
 
-            -1,
+                -1,
 
-        )
-
-    )
-
-
-# =====================================================
-# Get Rejected Candidates
-# =====================================================
-
-def get_rejected_candidates(
-
-    self,
-
-    job_id: str,
-
-):
-
-    return list(
-
-        self.collection.find(
-
-            {
-
-                "job_id": job_id,
-
-                "candidate_status": "REJECTED",
-
-            },
-
-            {
-
-                "_id": 0,
-
-            },
-
-        ).sort(
-
-            "final_score",
-
-            -1,
+            )
 
         )
 
-    )
+
+    # =====================================================
+    # Get Rejected Candidates
+    # =====================================================
+
+    def get_rejected_candidates(
+
+        self,
+
+        job_id: str,
+
+    ):
+
+        return list(
+
+            self.collection.find(
+
+                {
+
+                    "job_id": job_id,
+
+                    "candidate_status": "REJECTED",
+
+                },
+
+                {
+
+                    "_id": 0,
+
+                },
+
+            ).sort(
+
+                "final_score",
+
+                -1,
+
+            )
+
+        )

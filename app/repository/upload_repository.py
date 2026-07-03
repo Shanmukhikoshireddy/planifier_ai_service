@@ -30,8 +30,6 @@ class UploadRepository(BaseRepository):
 
         department: str,
 
-        designation: str,
-
         original_file_name: str,
 
         stored_file_name: str,
@@ -49,8 +47,6 @@ class UploadRepository(BaseRepository):
             "resume_id": resume_id,
 
             "department": department,
-
-            "designation": designation,
 
             "original_file_name": original_file_name,
 

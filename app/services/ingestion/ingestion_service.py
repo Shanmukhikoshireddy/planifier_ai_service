@@ -30,17 +30,10 @@ class IngestionService:
     # =====================================================
 
     def upload_resumes(
-
         self,
-
         zip_file: UploadFile,
-
         department: str,
-
-        designation: str,
-
         uploaded_by: str = "Recruiter",
-
     ):
 
         logger.info(
@@ -143,36 +136,21 @@ class IngestionService:
         # in Part-2
 
         return self.process_uploaded_resumes(
-
             upload_job_id=upload_job_id,
-
             resumes=resumes,
-
             department=department,
-
-            designation=designation,
-
             uploaded_by=uploaded_by,
-
         )
         # =====================================================
     # Process Uploaded Resumes
     # =====================================================
 
     def process_uploaded_resumes(
-
         self,
-
         upload_job_id: str,
-
         resumes: list,
-
         department: str,
-
-        designation: str,
-
         uploaded_by: str,
-
     ):
 
         uploaded_count = 0
@@ -194,16 +172,10 @@ class IngestionService:
             )
 
             minio_path = self.build_minio_path(
-
-                department=department,
-
-                designation=designation,
-
-                upload_job_id=upload_job_id,
-
-                stored_file_name=stored_file_name,
-
-            )
+        department=department,
+        upload_job_id=upload_job_id,
+        stored_file_name=stored_file_name,
+    )
 
             with open(
 
@@ -232,8 +204,6 @@ class IngestionService:
                 resume_id=resume_id,
 
                 department=department,
-
-                designation=designation,
 
                 original_file_name=resume_path.name,
 
@@ -284,8 +254,6 @@ class IngestionService:
 
         department: str,
 
-        designation: str,
-
         upload_job_id: str,
 
         stored_file_name: str,
@@ -297,8 +265,6 @@ class IngestionService:
             f"resumes/"
 
             f"{department}/"
-
-            f"{designation}/"
 
             f"{upload_job_id}/"
 

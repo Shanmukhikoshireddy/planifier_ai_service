@@ -6,7 +6,6 @@ from app.repository.embedding_repository import EmbeddingRepository
 from app.repository.profile_repository import ProfileRepository
 
 from app.services.shared.openai_service import OpenAIService
-
 from app.services.ingestion.embedding_service import EmbeddingService
 
 from app.services.search.cache_service import CacheService
@@ -20,7 +19,7 @@ from app.prompts.reasoning_prompt import build_reasoning_prompt
 class SearchService:
 
     """
-    Complete Candidate Search Workflow.
+    Complete Resume Search Workflow
     """
 
     def __init__(self):
@@ -43,9 +42,8 @@ class SearchService:
 
         self.scoring_service = ScoringService()
 
-
-        # =====================================================
-    # Search Candidates
+    # =====================================================
+    # Search
     # =====================================================
 
     def search(
@@ -54,11 +52,13 @@ class SearchService:
 
         department: str,
 
-        designation: str,
-
         job_description: str,
 
-        top_k: int = 20,
+        search_period: str,
+
+        page: int,
+
+        page_size: int,
 
     ):
 
@@ -68,7 +68,9 @@ class SearchService:
 
         )
 
-        # --------------------------------------
+        # ---------------------------------------------
+        # Parse Job Description
+        # ---------------------------------------------
 
         prompt = build_job_prompt(
 
@@ -88,71 +90,125 @@ class SearchService:
 
         )
 
-        # Remaining implementation
-        # Part-2
-
         return self.process_job(
 
-            job,
+            job=job,
 
-            department,
+            department=department,
 
-            designation,
+            search_period=search_period,
 
-            top_k,
+            page=page,
 
-            job_description,
+            page_size=page_size,
+
+            raw_job_description=job_description,
 
         )
-    
-        # =====================================================
-    # Build Job Text
+
+    # =====================================================
+    # Build Job Embedding Text
     # =====================================================
 
     def build_job_embedding_text(
 
         self,
 
-        job,
+        job: dict,
 
-    ):
+    ) -> str:
 
-            return f"""
+        sections = [
 
-    Title
+            job.get(
 
-    {job.get('title','')}
+                "title",
 
-    Experience
+                "",
 
-    {job.get('experience','')}
+            ),
 
-    Education
+            job.get(
 
-    {job.get('education','')}
+                "experience",
 
-    Skills
+                "",
 
-    {' '.join(job.get('skills',[]))}
+            ),
 
-    Responsibilities
+            job.get(
 
-    {' '.join(job.get('responsibilities',[]))}
+                "education",
 
-    Qualifications
+                "",
 
-    {' '.join(job.get('qualifications',[]))}
+            ),
 
-    Nice To Have
+            " ".join(
 
-    {' '.join(job.get('nice_to_have',[]))}
+                job.get(
 
-    """.strip()
+                    "skills",
 
+                    [],
 
+                )
 
+            ),
 
-        # =====================================================
+            " ".join(
+
+                job.get(
+
+                    "responsibilities",
+
+                    [],
+
+                )
+
+            ),
+
+            " ".join(
+
+                job.get(
+
+                    "qualifications",
+
+                    [],
+
+                )
+
+            ),
+
+            " ".join(
+
+                job.get(
+
+                    "nice_to_have",
+
+                    [],
+
+                )
+
+            ),
+
+        ]
+
+        return "\n".join(
+
+            [
+
+                section
+
+                for section in sections
+
+                if section
+
+            ]
+
+        )
+
+    # =====================================================
     # Process Job
     # =====================================================
 
@@ -160,21 +216,23 @@ class SearchService:
 
         self,
 
-        job,
+        job: dict,
 
         department: str,
 
-        designation: str,
+        search_period: str,
 
-        top_k: int,
+        page: int,
+
+        page_size: int,
 
         raw_job_description: str,
 
     ):
 
-        # --------------------------------------------
-        # Build Job Embedding Text
-        # --------------------------------------------
+        # ---------------------------------------------
+        # Build Embedding Text
+        # ---------------------------------------------
 
         job_text = self.build_job_embedding_text(
 
@@ -182,9 +240,9 @@ class SearchService:
 
         )
 
-        # --------------------------------------------
-        # Generate Job Embedding
-        # --------------------------------------------
+        # ---------------------------------------------
+        # Generate Embedding
+        # ---------------------------------------------
 
         job_embedding = self.embedding_service.generate_embedding(
 
@@ -198,17 +256,15 @@ class SearchService:
 
         )
 
-        # --------------------------------------------
-        # Check Cache
-        # --------------------------------------------
+        # ---------------------------------------------
+        # Cache Lookup
+        # ---------------------------------------------
 
         cached_job = self.cache_service.find_similar_job(
 
             embedding=job_embedding,
 
             department=department,
-
-            designation=designation,
 
         )
 
@@ -220,7 +276,7 @@ class SearchService:
 
             )
 
-            return self.search_repository.get_search_results(
+            results = self.search_repository.get_search_results(
 
                 str(
 
@@ -230,15 +286,59 @@ class SearchService:
 
             )
 
+            start = (
+
+                page - 1
+
+            ) * page_size
+
+            end = start + page_size
+
+            return {
+
+                "job_id": str(
+
+                    cached_job["_id"]
+
+                ),
+
+                "page": page,
+
+                "page_size": page_size,
+
+                "total_candidates": len(
+
+                    results
+
+                ),
+
+                "total_pages": (
+
+                    len(results)
+
+                    + page_size
+
+                    - 1
+
+                ) // page_size,
+
+                "results": results[
+
+                    start:end
+
+                ],
+
+            }
+
         logger.info(
 
             "Cache Miss."
 
         )
 
-        # --------------------------------------------
+        # ---------------------------------------------
         # Save Job
-        # --------------------------------------------
+        # ---------------------------------------------
 
         job_id = self.job_repository.create_job(
 
@@ -248,9 +348,7 @@ class SearchService:
 
             department=department,
 
-            designation=designation,
-
-            search_period="ALL",
+            search_period=search_period,
 
         )
 
@@ -260,26 +358,28 @@ class SearchService:
 
         )
 
-        # Continue to vector search
-
         return self.vector_search(
 
-            job_id,
+            job_id=job_id,
 
-            job,
+            job=job,
 
-            job_text,
+            job_text=job_text,
 
-            job_embedding,
+            job_embedding=job_embedding,
 
-            top_k,
+            department=department,
 
-            raw_job_description,
+            search_period=search_period,
+
+            page=page,
+
+            page_size=page_size,
+
+            raw_job_description=raw_job_description,
 
         )
     
-
-
         # =====================================================
     # Vector Search
     # =====================================================
@@ -290,13 +390,19 @@ class SearchService:
 
         job_id: str,
 
-        job,
+        job: dict,
 
         job_text: str,
 
         job_embedding: list,
 
-        top_k: int,
+        department: str,
+
+        search_period: str,
+
+        page: int,
+
+        page_size: int,
 
         raw_job_description: str,
 
@@ -312,7 +418,9 @@ class SearchService:
 
             embedding=job_embedding,
 
-            top_n=100,
+            department=department,
+
+            search_period=search_period,
 
         )
 
@@ -356,24 +464,50 @@ class SearchService:
 
         )
 
+        if not candidates:
+
+            logger.warning(
+
+                "No candidates found."
+
+            )
+
+            return {
+
+                "job_id": job_id,
+
+                "page": page,
+
+                "page_size": page_size,
+
+                "total_candidates": 0,
+
+                "total_pages": 0,
+
+                "results": [],
+
+            }
+
         return self.rerank_candidates(
 
-            job_id,
+            job_id=job_id,
 
-            job,
+            job=job,
 
-            job_text,
+            job_text=job_text,
 
-            candidates,
+            candidates=candidates,
 
-            top_k,
+            page=page,
 
-            raw_job_description,
+            page_size=page_size,
+
+            raw_job_description=raw_job_description,
 
         )
-    
 
-        # =====================================================
+
+    # =====================================================
     # Rerank Candidates
     # =====================================================
 
@@ -383,13 +517,15 @@ class SearchService:
 
         job_id: str,
 
-        job,
+        job: dict,
 
         job_text: str,
 
         candidates: list,
 
-        top_k: int,
+        page: int,
+
+        page_size: int,
 
         raw_job_description: str,
 
@@ -401,34 +537,89 @@ class SearchService:
 
         )
 
+        # -----------------------------------------
+        # Build Resume Text
+        # -----------------------------------------
+
         for candidate in candidates:
 
-            candidate["resume_text"] = f"""
+            skills = candidate.get(
 
+                "skills",
+
+                [],
+
+            )
+
+            education = candidate.get(
+
+                "education",
+
+                [],
+
+            )
+
+            projects = candidate.get(
+
+                "projects",
+
+                [],
+
+            )
+
+            certifications = candidate.get(
+
+                "certifications",
+
+                [],
+
+            )
+
+            candidate["resume_text"] = f"""
 Candidate
 
-{candidate.get('candidate_name','')}
+{candidate.get("candidate_name", "")}
+
+Designation
+
+{candidate.get("designation", "")}
+
+Department
+
+{candidate.get("department", "")}
 
 Experience
 
-{candidate.get('total_experience','')}
+{candidate.get("experience_years", 0)}
+
+Summary
+
+{candidate.get("summary", "")}
 
 Skills
 
-{' '.join(candidate.get('skills', []))}
+{' '.join(skills)}
+
+Education
+
+{' '.join(education)}
 
 Projects
 
-{
-chr(10).join(
-    [
-        p.get("description","")
-        for p in candidate.get("projects",[])
-    ]
-)
-}
+{chr(10).join(projects)}
 
-"""
+Certifications
+
+{' '.join(certifications)}
+
+Current Company
+
+{candidate.get("current_company", "")}
+""".strip()
+
+        # -----------------------------------------
+        # Cross Encoder
+        # -----------------------------------------
 
         candidates = self.reranker_service.rerank_candidates(
 
@@ -438,29 +629,25 @@ chr(10).join(
 
         )
 
-        candidates = self.reranker_service.top_candidates(
-
-            candidates,
-
-            top_k,
-
-        )
-
         logger.info(
 
-            f"Top {len(candidates)} candidates selected."
+            f"Reranked {len(candidates)} candidates."
 
         )
 
         return self.score_candidates(
 
-            job_id,
+            job_id=job_id,
 
-            job,
+            job=job,
 
-            candidates,
+            candidates=candidates,
 
-            raw_job_description,
+            page=page,
+
+            page_size=page_size,
+
+            raw_job_description=raw_job_description,
 
         )
     
@@ -474,9 +661,13 @@ chr(10).join(
 
         job_id: str,
 
-        job,
+        job: dict,
 
         candidates: list,
+
+        page: int,
+
+        page_size: int,
 
         raw_job_description: str,
 
@@ -502,9 +693,47 @@ chr(10).join(
 
         ]
 
+        required_years = self.scoring_service.extract_years(
+
+            job.get(
+
+                "experience",
+
+                "",
+
+            )
+
+        )
+
+        required_education = job.get(
+
+            "education",
+
+            "",
+
+        ).lower()
+
+        required_certifications = {
+
+            cert.lower()
+
+            for cert in job.get(
+
+                "certifications",
+
+                [],
+
+            )
+
+        }
+
         scored_candidates = []
 
         for candidate in candidates:
+
+            # ----------------------------------------
+            # Skills
+            # ----------------------------------------
 
             candidate_skills = [
 
@@ -540,25 +769,117 @@ chr(10).join(
 
             ]
 
-            skill_match_percentage = 0
-
             if required_skills:
 
                 skill_match_percentage = round(
 
                     (
 
-                        len(matched_skills)
+                        len(
+
+                            matched_skills
+
+                        )
 
                         /
 
-                        len(required_skills)
+                        len(
 
-                    ) * 100,
+                            required_skills
+
+                        )
+
+                    )
+
+                    * 100,
 
                     2,
 
                 )
+
+            else:
+
+                skill_match_percentage = 100
+
+            # ----------------------------------------
+            # Experience
+            # ----------------------------------------
+
+            try:
+
+                candidate_years = float(
+
+                    candidate.get(
+
+                        "experience_years",
+
+                        0,
+
+                    )
+
+                )
+
+            except Exception:
+
+                candidate_years = 0
+
+            # ----------------------------------------
+            # Education
+            # ----------------------------------------
+
+            candidate_education = " ".join(
+
+                candidate.get(
+
+                    "education",
+
+                    [],
+
+                )
+
+            ).lower()
+
+            education_match = (
+
+                required_education in candidate_education
+
+                if required_education
+
+                else True
+
+            )
+
+            # ----------------------------------------
+            # Certifications
+            # ----------------------------------------
+
+            candidate_certifications = {
+
+                cert.lower()
+
+                for cert in candidate.get(
+
+                    "certifications",
+
+                    [],
+
+                )
+
+            }
+
+            certification_match = bool(
+
+                required_certifications.intersection(
+
+                    candidate_certifications
+
+                )
+
+            )
+
+            # ----------------------------------------
+            # Final Score
+            # ----------------------------------------
 
             final_score = self.scoring_service.final_score(
 
@@ -570,17 +891,25 @@ chr(10).join(
 
                 ),
 
+                rerank_score=candidate.get(
+
+                    "rerank_score",
+
+                    0,
+
+                ),
+
                 matched_skills=matched_skills,
 
                 required_skills=required_skills,
 
-                candidate_years=0,
+                candidate_years=candidate_years,
 
-                required_years=0,
+                required_years=required_years,
 
-                education_match=True,
+                education_match=education_match,
 
-                certification_match=False,
+                certification_match=certification_match,
 
             )
 
@@ -590,13 +919,23 @@ chr(10).join(
 
             candidate["skill_match_percentage"] = skill_match_percentage
 
-            candidate["final_score"] = final_score
+            candidate["final_score"] = round(
+
+                final_score,
+
+                2,
+
+            )
 
             scored_candidates.append(
 
                 candidate
 
             )
+
+        # ----------------------------------------
+        # Sort Candidates
+        # ----------------------------------------
 
         scored_candidates.sort(
 
@@ -606,22 +945,46 @@ chr(10).join(
 
         )
 
+        total_candidates = len(
+
+            scored_candidates
+
+        )
+
+        total_pages = (
+
+            total_candidates + page_size - 1
+
+        ) // page_size
+
+        logger.info(
+
+            "ATS Scoring Completed."
+
+        )
+
         return self.generate_reasoning(
 
-            job_id,
+            job_id=job_id,
 
-            job,
+            job=job,
 
-            scored_candidates,
+            candidates=scored_candidates,
 
-            raw_job_description,
+            total_candidates=total_candidates,
+
+            total_pages=total_pages,
+
+            page=page,
+
+            page_size=page_size,
+
+            raw_job_description=raw_job_description,
 
         )
     
-
-
         # =====================================================
-    # Generate Candidate Reasoning
+    # Generate Reasoning
     # =====================================================
 
     def generate_reasoning(
@@ -630,9 +993,17 @@ chr(10).join(
 
         job_id: str,
 
-        job,
+        job: dict,
 
         candidates: list,
+
+        total_candidates: int,
+
+        total_pages: int,
+
+        page: int,
+
+        page_size: int,
 
         raw_job_description: str,
 
@@ -640,27 +1011,24 @@ chr(10).join(
 
         logger.info(
 
-            "Generating AI Reasoning..."
+            "Generating Candidate Reasoning..."
 
         )
 
+        # ------------------------------------------------
+        # Currently reasoning is generated lazily
+        # when the frontend requests a single candidate.
+        # ------------------------------------------------
+
         for candidate in candidates:
 
-            prompt = build_reasoning_prompt(
+            candidate["reasoning"] = None
 
-                job,
+            candidate["reasoning_generated"] = False
 
-                candidate,
-
-            )
-
-            reasoning = self.openai_service.generate(
-
-                prompt
-
-            )
-
-            candidate["reasoning"] = reasoning
+        # ------------------------------------------------
+        # Save Results
+        # ------------------------------------------------
 
         self.search_repository.save_search_results(
 
@@ -670,11 +1038,15 @@ chr(10).join(
 
         )
 
+        # ------------------------------------------------
+        # Update Job
+        # ------------------------------------------------
+
         self.job_repository.update_result_count(
 
             job_id,
 
-            len(candidates),
+            total_candidates,
 
         )
 
@@ -692,28 +1064,54 @@ chr(10).join(
 
         )
 
+        start = (
+
+            page - 1
+
+        ) * page_size
+
+        end = start + page_size
+
         return {
 
             "job_id": job_id,
 
-            "total_candidates": len(
+            "page": page,
 
-                candidates
+            "page_size": page_size,
 
-            ),
+            "total_candidates": total_candidates,
 
-            "results": candidates,
+            "total_pages": total_pages,
+
+            "results": candidates[start:end],
 
         }
+
+
+    # =====================================================
+    # Candidate Reasoning
+    # =====================================================
+
     def get_candidate_reasoning(
 
-    self,
+        self,
 
-    job_id: str,
+        job_id: str,
 
-    resume_id: str,
+        resume_id: str,
 
-):
+    ):
+
+        logger.info(
+
+            f"Generating reasoning for {resume_id}"
+
+        )
+
+        # -----------------------------------------
+        # Cached Reasoning
+        # -----------------------------------------
 
         reasoning = self.search_repository.get_reasoning(
 
@@ -723,13 +1121,45 @@ chr(10).join(
 
         )
 
-        if reasoning and reasoning.get(
+        if (
 
-            "reasoning_generated"
+            reasoning
+
+            and reasoning.get(
+
+                "reasoning_generated",
+
+                False,
+
+            )
 
         ):
 
-            return reasoning
+            logger.info(
+
+                "Reasoning Cache Hit."
+
+            )
+
+            return {
+
+                "resume_id": resume_id,
+
+                "reasoning": reasoning.get(
+
+                    "reasoning",
+
+                    "",
+
+                ),
+
+                "cached": True,
+
+            }
+
+        # -----------------------------------------
+        # Candidate
+        # -----------------------------------------
 
         candidate = self.search_repository.get_candidate(
 
@@ -739,17 +1169,212 @@ chr(10).join(
 
         )
 
+        if candidate is None:
+
+            return {
+
+                "message": "Candidate not found."
+
+            }
+
+
         job = self.job_repository.get_job(
 
             job_id,
 
         )
 
+        if job is None:
+
+            return {
+
+                "message": "Job not found."
+
+            }
+
+
+        # =====================================================
+        # Build Clean Candidate Context
+        # =====================================================
+
+        candidate_context = {
+
+            "candidate_name": candidate.get(
+
+                "candidate_name"
+
+            ),
+
+            "designation": candidate.get(
+
+                "designation"
+
+            ),
+
+            "department": candidate.get(
+
+                "department"
+
+            ),
+
+            "experience_years": candidate.get(
+
+                "experience_years"
+
+            ),
+
+            "summary": candidate.get(
+
+                "summary"
+
+            ),
+
+            "skills": candidate.get(
+
+                "skills",
+
+                [],
+
+            ),
+
+            "education": candidate.get(
+
+                "education",
+
+                [],
+
+            ),
+
+            "projects": candidate.get(
+
+                "projects",
+
+                [],
+
+            ),
+
+            "certifications": candidate.get(
+
+                "certifications",
+
+                [],
+
+            ),
+
+            "matched_skills": candidate.get(
+
+                "matched_skills",
+
+                [],
+
+            ),
+
+            "missing_skills": candidate.get(
+
+                "missing_skills",
+
+                [],
+
+            ),
+
+            "skill_match_percentage": candidate.get(
+
+                "skill_match_percentage",
+
+                0,
+
+            ),
+
+            "final_score": candidate.get(
+
+                "final_score",
+
+                0,
+
+            ),
+
+        }
+
+
+        # =====================================================
+        # Build Clean Job Context
+        # =====================================================
+
+        job_context = {
+
+            "title": job.get(
+
+                "title"
+
+            ),
+
+            "experience": job.get(
+
+                "experience"
+
+            ),
+
+            "education": job.get(
+
+                "education"
+
+            ),
+
+            "skills": job.get(
+
+                "skills",
+
+                [],
+
+            ),
+
+            "responsibilities": job.get(
+
+                "responsibilities",
+
+                [],
+
+            ),
+
+            "qualifications": job.get(
+
+                "qualifications",
+
+                [],
+
+            ),
+
+            "nice_to_have": job.get(
+
+                "nice_to_have",
+
+                [],
+
+            ),
+
+        }
+
+
+        logger.info("=" * 80)
+
+        logger.info("JOB CONTEXT")
+
+        logger.info(job_context)
+
+        logger.info("=" * 80)
+
+        logger.info("CANDIDATE CONTEXT")
+
+        logger.info(candidate_context)
+
+        logger.info("=" * 80)
+
+
         prompt = build_reasoning_prompt(
 
-            job,
+            job_context,
 
-            candidate,
+            candidate_context,
 
         )
 
@@ -758,6 +1383,10 @@ chr(10).join(
             prompt
 
         )
+
+        # -----------------------------------------
+        # Save
+        # -----------------------------------------
 
         self.search_repository.save_reasoning(
 
@@ -769,10 +1398,18 @@ chr(10).join(
 
         )
 
+        logger.info(
+
+            "Reasoning Generated."
+
+        )
+
         return {
 
             "resume_id": resume_id,
 
             "reasoning": reasoning_text,
+
+            "cached": False,
 
         }

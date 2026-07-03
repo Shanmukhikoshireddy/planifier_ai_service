@@ -63,11 +63,13 @@ class Settings(BaseSettings):
     
 
 
-    SEMANTIC_WEIGHT: float  = 0.40
+    SEMANTIC_WEIGHT: float  = 0.35
     SKILL_WEIGHT: float  = 0.25
-    EXPERIENCE_WEIGHT: float  = 0.20
+    EXPERIENCE_WEIGHT: float  = 0.15
     EDUCATION_WEIGHT: float  = 0.10
     CERTIFICATION_WEIGHT: float  = 0.05
+    RERANK_WEIGHT: float = 0.10
+
     
 
     GEMINI_API_KEY: str

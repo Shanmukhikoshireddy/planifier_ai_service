@@ -1,5 +1,5 @@
 from app.config.settings import settings
-
+import re
 
 class ScoringService:
     """
@@ -11,6 +11,7 @@ class ScoringService:
         self.semantic_weight = settings.SEMANTIC_WEIGHT
 
         self.skill_weight = settings.SKILL_WEIGHT
+        self.rerank_weight = settings.RERANK_WEIGHT
 
         self.experience_weight = settings.EXPERIENCE_WEIGHT
 
@@ -125,62 +126,49 @@ class ScoringService:
     # =====================================================
 
     def final_score(
-
+            
         self,
-
         similarity_score: float,
-
+        rerank_score: float,
         matched_skills: list,
-
         required_skills: list,
-
         candidate_years: float,
-
         required_years: float,
-
         education_match: bool,
-
         certification_match: bool,
-
     ) -> float:
 
         semantic = self.semantic_score(
-
             similarity_score
-
         )
 
+        rerank = rerank_score * 100
+
         skills = self.skill_score(
-
             matched_skills,
-
             required_skills,
-
         )
 
         experience = self.experience_score(
-
             candidate_years,
-
             required_years,
-
         )
 
         education = self.education_score(
-
             education_match,
-
         )
 
         certification = self.certification_score(
-
             certification_match,
-
         )
 
         score = (
 
             semantic * self.semantic_weight
+
+            +
+
+            rerank * self.rerank_weight
 
             +
 
@@ -200,10 +188,25 @@ class ScoringService:
 
         )
 
-        return round(
+        return round(score, 2)
+    
 
-            score,
+    def extract_years(
+        self,
+        experience: str,
+    ) -> float:
 
-            2,
+        if not experience:
+            return 0
 
-        )
+        experience = experience.strip()
+
+        numbers = re.findall(r"\d+", experience)
+
+        if not numbers:
+            return 0
+
+        if len(numbers) == 1:
+            return float(numbers[0])
+
+        return float(numbers[0])

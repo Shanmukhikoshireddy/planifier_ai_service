@@ -1,166 +1,10 @@
-# import json
-# import time
-
-# from openai import OpenAI
-
-# from app.config.settings import settings
-# from app.config.logging import logger
-
-
-# class OpenAIService:
-#     """
-#     Shared OpenAI Service
-
-#     Used by:
-#         • Resume Ingestion
-#         • Job Parsing
-#         • Candidate Reasoning
-#         • Search Explanation
-#     """
-
-#     _client = None
-
-#     def __init__(self):
-
-#         if OpenAIService._client is None:
-
-#             logger.info("Initializing OpenAI Client...")
-
-#             OpenAIService._client = OpenAI(
-
-#                 api_key=settings.OPENAI_API_KEY,
-
-#             )
-
-#             logger.info("OpenAI Client Initialized.")
-
-#         self.client = OpenAIService._client
-
-#         self.model = settings.OPENAI_MODEL
-
-#     # =====================================================
-#     # Generic Chat Completion
-#     # =====================================================
-
-#     def generate(
-
-#         self,
-
-#         prompt: str,
-
-#         temperature: float = 0,
-
-#         response_format: dict | None = None,
-
-#     ):
-
-#         start = time.time()
-
-#         kwargs = {
-
-#             "model": self.model,
-
-#             "messages": [
-
-#                 {
-
-#                     "role": "user",
-
-#                     "content": prompt,
-
-#                 }
-
-#             ],
-
-#             "temperature": temperature,
-
-#         }
-
-#         if response_format:
-
-#             kwargs["response_format"] = response_format
-
-#         response = self.client.chat.completions.create(
-
-#             **kwargs
-
-#         )
-
-#         logger.info(
-
-#             f"OpenAI Response Time : {round(time.time()-start,2)} sec"
-
-#         )
-
-#         return response.choices[0].message.content
-
-#     # =====================================================
-#     # JSON Generation
-#     # =====================================================
-
-#     def generate_json(
-
-#         self,
-
-#         prompt: str,
-
-#     ):
-
-#         response = self.generate(
-
-#             prompt=prompt,
-
-#             temperature=0,
-
-#             response_format={
-
-#                 "type": "json_object"
-
-#             }
-
-#         )
-
-#         return json.loads(
-
-#             response
-
-#         )
-
-#     # =====================================================
-#     # Health Check
-#     # =====================================================
-
-#     def health_check(
-
-#         self,
-
-#     ) -> bool:
-
-#         try:
-
-#             self.generate(
-
-#                 "Reply only with OK."
-
-#             )
-
-#             return True
-
-#         except Exception as e:
-
-#             logger.exception(e)
-
-#             return False
-
-
-
-
 
 
 
 import json
 
 from google import genai
+import time
 
 from app.config.settings import settings
 from app.config.logging import logger
@@ -220,13 +64,34 @@ class OpenAIService:
 
             )
 
-            response = self.client.models.generate_content(
+          
+            for attempt in range(3):
 
-                model=self.model,
+                try:
 
-                contents=prompt,
+                    response = self.client.models.generate_content(
 
-            )
+                        model=self.model,
+
+                        contents=prompt,
+
+                    )
+
+                    return response.text.strip()
+
+                except Exception as e:
+
+                    logger.warning(
+
+                        f"Gemini attempt {attempt+1} failed."
+
+                    )
+
+                    if attempt == 2:
+
+                        raise
+
+                    time.sleep(5)
 
             return response.text.strip()
 
@@ -241,54 +106,38 @@ class OpenAIService:
     # =====================================================
 
     def generate_json(
-
         self,
-
         messages,
-
     ) -> dict:
 
-        response = self.generate(
+        response = self.generate(messages)
 
-            messages
-
-        )
         response = response.strip()
+
+        # Remove markdown if Gemini returns ```json
+        if response.startswith("```"):
+            response = response.replace("```json", "")
+            response = response.replace("```", "")
+            response = response.strip()
 
         start = response.find("{")
         end = response.rfind("}")
 
         if start != -1 and end != -1:
-            response = response[start:end+1]
-
-        return json.loads(response)
+            response = response[start:end + 1]
 
         try:
 
-            return json.loads(
-
-                response
-
-            )
+            return json.loads(response)
 
         except json.JSONDecodeError:
 
-            logger.error(
+            logger.error("Gemini returned invalid JSON.")
 
-                "Gemini returned invalid JSON."
-
-            )
-
-            logger.error(
-
-                response
-
-            )
+            logger.error(response)
 
             raise ValueError(
-
                 "Invalid JSON returned by Gemini."
-
             )
 
     # =====================================================
@@ -296,31 +145,20 @@ class OpenAIService:
     # =====================================================
 
     def health_check(
-
         self,
-
     ) -> bool:
-
         try:
-
             response = self.client.models.generate_content(
-
                 model=self.model,
-
                 contents="Reply with OK.",
-
             )
-
+            print("Gemini Response:",response.text)
             return (
-
                 response.text.strip().upper()
-
                 == "OK"
-
             )
-
-        except Exception:
-
+        except Exception as e:
+            print("Gemini health Error:",e)
             return False
 
     # =====================================================

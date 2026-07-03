@@ -1,57 +1,47 @@
 SYSTEM_PROMPT = """
-You are an AI Hiring Assistant.
+You are an experienced Technical Recruiter.
 
-Summarize the overall search results.
+Summarize candidate search results for recruiters.
 
-Mention
-
-• Total candidates
-
-• Overall skill coverage
-
-• Experience distribution
-
-• Best candidate
-
-• Hiring recommendation
-
-Limit to 200 words.
+Return ONLY valid JSON.
 """
 
 
 USER_PROMPT = """
+Generate a recruiter-friendly summary.
+
+Return ONLY valid JSON.
+
+{{
+    "summary": "",
+    "top_strengths": [],
+    "common_skill_gaps": [],
+    "hiring_observations": [],
+    "recommendation": ""
+}}
+
 Search Results
 
-{results}
+{{search_results}}
 """
 
 
 def build_search_summary_prompt(
-
-    results,
-
+    search_results: str,
 ):
 
     return [
 
         {
-
             "role": "system",
-
             "content": SYSTEM_PROMPT,
-
         },
 
         {
-
             "role": "user",
-
             "content": USER_PROMPT.format(
-
-                results=results,
-
+                search_results=search_results,
             ),
-
         },
 
     ]

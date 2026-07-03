@@ -12,7 +12,7 @@ from app.services.shared.openai_service import OpenAIService
 from app.prompts.resume_prompt import build_resume_prompt
 
 from app.utils.hash import generate_hash
-
+from datetime import datetime
 from app.config.logging import logger
 from pathlib import Path
 import traceback
@@ -256,7 +256,6 @@ class IngestionWorker:
 
                     department=upload["department"],
 
-                    designation=upload["designation"],
 
                     resume_path=upload["minio_path"],
 
@@ -277,6 +276,10 @@ class IngestionWorker:
                     embedding_model="bge-m3",
 
                     dimension=len(embedding),
+
+                    department=upload["department"],
+
+                    uploaded_at=datetime.utcnow(),
 
                 )
 
