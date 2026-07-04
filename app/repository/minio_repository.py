@@ -15,9 +15,7 @@ class MinioRepository:
 
         self.bucket = settings.MINIO_BUCKET
 
-    # =====================================================
     # Upload File
-    # =====================================================
 
     def upload_file(
         self,
@@ -40,9 +38,7 @@ class MinioRepository:
 
         return object_name
 
-    # =====================================================
     # Download File
-    # =====================================================
 
     def download_file(
         self,
@@ -70,9 +66,7 @@ class MinioRepository:
 
             response.release_conn()
 
-    # =====================================================
     # Get Object Metadata
-    # =====================================================
 
     def get_object_info(
         self,
@@ -84,9 +78,7 @@ class MinioRepository:
             object_name,
         )
 
-    # =====================================================
     # File Exists
-    # =====================================================
 
     def file_exists(
         self,
@@ -106,9 +98,7 @@ class MinioRepository:
 
             return False
 
-    # =====================================================
     # Delete File
-    # =====================================================
 
     def delete_file(
         self,
@@ -124,9 +114,7 @@ class MinioRepository:
             f"Deleted : {object_name}"
         )
 
-    # =====================================================
     # List Files
-    # =====================================================
 
     def list_files(
         self,
@@ -143,9 +131,7 @@ class MinioRepository:
 
         )
 
-    # =====================================================
     # Bucket Exists
-    # =====================================================
 
     def bucket_exists(
         self,
@@ -155,9 +141,7 @@ class MinioRepository:
             self.bucket
         )
 
-    # =====================================================
     # Get File Path
-    # =====================================================
 
     def get_file_path(
         self,

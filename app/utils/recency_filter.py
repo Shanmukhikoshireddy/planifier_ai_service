@@ -1,15 +1,15 @@
 from datetime import datetime,timedelta
 
-def build_recency_filter(search_period):
+def build_recency_filter(received_within):
 
     now = datetime.utcnow()
 
-    if search_period=="LAST_WEEK":
+    if received_within=="LAST_WEEK":
         return {
             "$gte": now-timedelta(days=7)
         }
 
-    if search_period=="LAST_MONTH":
+    if received_within=="LAST_MONTH":
         return {
             "$gte": now-timedelta(days=30)
         }

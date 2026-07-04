@@ -44,9 +44,7 @@ class OpenAIService:
 
         )
 
-    # =====================================================
     # Generate Text
-    # =====================================================
 
     def generate(
 
@@ -101,9 +99,7 @@ class OpenAIService:
 
             raise
 
-    # =====================================================
     # Generate JSON
-    # =====================================================
 
     def generate_json(
         self,
@@ -140,9 +136,7 @@ class OpenAIService:
                 "Invalid JSON returned by Gemini."
             )
 
-    # =====================================================
     # Health Check
-    # =====================================================
 
     def health_check(
         self,
@@ -161,9 +155,7 @@ class OpenAIService:
             print("Gemini health Error:",e)
             return False
 
-    # =====================================================
     # Build Prompt
-    # =====================================================
 
     def _build_prompt(
 

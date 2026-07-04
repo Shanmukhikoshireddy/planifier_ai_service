@@ -12,7 +12,7 @@ from app.repository.job_repository import JobRepository
 
 router = APIRouter(
 
-    prefix="/cv-service/search",
+    prefix="/api/cv-service/search",
 
     tags=["Candidate Search"],
 
@@ -52,9 +52,9 @@ def search_candidates(
     try:
 
         return search_service.search(
-            department=request.department,
+            job_position=request.job_position,
             job_description=request.job_description,
-            search_period=request.search_period,
+            received_within=request.received_within,
             page=request.page,
             page_size=request.page_size,
         )

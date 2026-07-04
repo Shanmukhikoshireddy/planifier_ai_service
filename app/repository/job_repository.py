@@ -13,29 +13,29 @@ class JobRepository(BaseRepository):
 
         self.collection = self.db["jobs"]
 
-    # =====================================================
+
     # Create Job
-    # =====================================================
+
 
     def create_job(
         self,
         job: dict,
         embedding: list,
-        department: str,
-        search_period: str,
+        job_position: str,
+        received_within: str,
     ):
 
         document = {
 
             "title": job.get("title", ""),
 
-            "department": department,
+            "job_position": job_position,
 
             "job_description": job,
 
             "job_embedding": embedding,
 
-            "search_period": search_period,
+            "received_within": received_within,
 
             "created_at": datetime.utcnow(),
 
@@ -53,9 +53,9 @@ class JobRepository(BaseRepository):
 
         return str(result.inserted_id)
 
-    # =====================================================
+
     # Update Job
-    # =====================================================
+
 
     def update_job(
         self,
@@ -74,9 +74,9 @@ class JobRepository(BaseRepository):
             }
         )
 
-    # =====================================================
+
     # Get Job
-    # =====================================================
+
 
     def get_job(
         self,
@@ -112,8 +112,8 @@ class JobRepository(BaseRepository):
                 ""
             ),
 
-            "department": document.get(
-                "department",
+            "job_position": document.get(
+                "job_position",
                 ""
             ),
 
@@ -162,29 +162,132 @@ class JobRepository(BaseRepository):
 
         }
 
-    # =====================================================
+
     # Get All Jobs
-    # =====================================================
+
+
 
     def get_all_jobs(self):
 
         jobs = list(
 
-            self.collection.find()
+            self.collection.find().sort(
 
-            .sort("created_at", -1)
+                "created_at",
+
+                -1,
+
+            )
 
         )
 
+        history = []
+
         for job in jobs:
 
-            job["_id"] = str(job["_id"])
+            parsed_job = job.get(
 
-        return jobs
+                "job_description",
 
-    # =====================================================
+                {}
+
+            )
+
+            history.append(
+
+                {
+
+                    "job_id": str(
+
+                        job["_id"]
+
+                    ),
+
+                    "designation": parsed_job.get(
+
+                        "title",
+
+                        "",
+
+                    ),
+
+                    "job_position": job.get(
+
+                        "job_position",
+
+                        "",
+
+                    ),
+
+                    "description": parsed_job.get(
+
+                        "summary",
+
+                        ""
+
+                    )
+
+                    or
+
+                    " ".join(
+
+                        parsed_job.get(
+
+                            "skills",
+
+                            []
+
+                        )[:8]
+
+                    ),
+
+                    "received_within": job.get(
+
+                        "received_within",
+
+                        "ALL",
+
+                    ),
+
+                    "searched_at": job.get(
+
+                        "created_at",
+
+                    ),
+
+                    "candidate_count": job.get(
+
+                        "search_result_count",
+
+                        0,
+
+                    ),
+
+                    "status": job.get(
+
+                        "status",
+
+                        "UNKNOWN",
+
+                    ),
+
+                    "cached": job.get(
+
+                        "cached",
+
+                        False,
+
+                    ),
+
+                }
+
+            )
+
+        return history
+
+
     # Delete Job
-    # =====================================================
+
 
     def delete_job(
         self,
@@ -197,22 +300,22 @@ class JobRepository(BaseRepository):
             }
         )
 
-    # =====================================================
+
     # Count Jobs
-    # =====================================================
+
 
     def count_jobs(self):
 
         return self.collection.count_documents({})
 
-    # =====================================================
+
     # Find Similar Job (Cache)
-    # =====================================================
+
 
     def find_similar_job(
         self,
         embedding: list,
-        department: str,
+        job_position: str,
         threshold: float = 0.95,
     ):
 
@@ -233,7 +336,7 @@ class JobRepository(BaseRepository):
 
                     "filter": {
 
-                        "department": department
+                        "job_position": job_position
 
                     }
 
@@ -247,7 +350,7 @@ class JobRepository(BaseRepository):
 
                     "title": 1,
 
-                    "department": 1,
+                    "job_position": 1,
 
                     "score": {
 
@@ -280,9 +383,9 @@ class JobRepository(BaseRepository):
 
         return jobs[0]
 
-    # =====================================================
+
     # Mark Cached
-    # =====================================================
+
 
     def mark_as_cached(
         self,
@@ -311,9 +414,9 @@ class JobRepository(BaseRepository):
 
         )
 
-    # =====================================================
+
     # Update Result Count
-    # =====================================================
+
 
     def update_result_count(
         self,
@@ -343,9 +446,9 @@ class JobRepository(BaseRepository):
 
         )
 
-    # =====================================================
+
     # Update Status
-    # =====================================================
+
 
     def update_status(
         self,
@@ -375,9 +478,9 @@ class JobRepository(BaseRepository):
 
         )
 
-    # =====================================================
+
     # Get Processing Jobs
-    # =====================================================
+
 
     def get_processing_jobs(self):
 
@@ -401,9 +504,9 @@ class JobRepository(BaseRepository):
 
         return jobs
 
-    # =====================================================
+
     # Get Completed Jobs
-    # =====================================================
+
 
     def get_completed_jobs(self):
 
@@ -433,9 +536,9 @@ class JobRepository(BaseRepository):
 
         return jobs
 
-    # =====================================================
+
     # Latest Job
-    # =====================================================
+
 
     def get_latest_job(self):
 

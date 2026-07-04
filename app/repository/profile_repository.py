@@ -11,9 +11,7 @@ class ProfileRepository(BaseRepository):
 
         self.collection = self.db["profiles"]
 
-    # =====================================================
     # Save Profile
-    # =====================================================
 
     def save_profile(
 
@@ -30,7 +28,7 @@ class ProfileRepository(BaseRepository):
         """
         Save parsed resume profile.
 
-        Department is taken directly from the
+        job_position is taken directly from the
         extracted resume JSON.
         """
 
@@ -38,9 +36,9 @@ class ProfileRepository(BaseRepository):
 
         document["resume_id"] = resume_id
 
-        document["department"] = resume.get(
+        document["job_position"] = resume.get(
 
-            "department",
+            "job_position",
 
             "Unknown",
 
@@ -65,9 +63,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Duplicate Resume Check
-    # =====================================================
 
     def resume_exists(
 
@@ -93,9 +89,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Get Profile
-    # =====================================================
 
     def get_profile(
 
@@ -123,9 +117,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Get All Profiles
-    # =====================================================
 
     def get_all_profiles(
 
@@ -157,9 +149,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Update Profile
-    # =====================================================
 
     def update_profile(
 
@@ -189,9 +179,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Delete Profile
-    # =====================================================
 
     def delete_profile(
 
@@ -211,9 +199,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Count Profiles
-    # =====================================================
 
     def count_profiles(
 
@@ -227,15 +213,13 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Filter Profiles
-    # =====================================================
 
     def filter_profiles(
 
         self,
 
-        department: str | None = None,
+        job_position: str | None = None,
 
     ):
 
@@ -245,9 +229,9 @@ class ProfileRepository(BaseRepository):
 
         }
 
-        if department:
+        if job_position:
 
-            filters["department"] = department
+            filters["job_position"] = job_position
 
         return list(
 
@@ -265,9 +249,7 @@ class ProfileRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Soft Delete Profile
-    # =====================================================
 
     def soft_delete_profile(
 

@@ -3,6 +3,6 @@ from typing import Optional
 
 class JobRequest(BaseModel):
 
-    department: str
+    job_position: str
 
     job_description: str

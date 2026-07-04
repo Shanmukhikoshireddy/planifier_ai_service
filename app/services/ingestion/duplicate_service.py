@@ -10,9 +10,7 @@ class DuplicateService:
 
         self.profile_repository = ProfileRepository()
 
-    # =====================================================
     # Check Duplicate Resume
-    # =====================================================
 
     def is_duplicate(
 
@@ -28,9 +26,7 @@ class DuplicateService:
 
         )
 
-    # =====================================================
     # Validate Before Processing
-    # =====================================================
 
     def validate(
 

@@ -11,9 +11,7 @@ class EmbeddingRepository(BaseRepository):
 
         self.collection = self.db["embeddings"]
 
-    # =====================================================
     # Save Embedding
-    # =====================================================
 
     def save_embedding(
         self,
@@ -21,7 +19,7 @@ class EmbeddingRepository(BaseRepository):
         embedding: list,
         embedding_model: str,
         dimension: int,
-        department: str,
+        job_position: str,
         uploaded_at: datetime,
     ):
         """
@@ -42,7 +40,7 @@ class EmbeddingRepository(BaseRepository):
 
             "dimension": dimension,
 
-            "department": department,
+            "job_position": job_position,
 
             "uploaded_at": uploaded_at,
 
@@ -52,9 +50,7 @@ class EmbeddingRepository(BaseRepository):
 
         self.collection.insert_one(document)
 
-    # =====================================================
     # Get Embedding
-    # =====================================================
 
     def get_embedding(
         self,
@@ -77,9 +73,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Delete Embedding
-    # =====================================================
 
     def delete_embedding(
         self,
@@ -96,9 +90,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # MongoDB Atlas Vector Search
-    # =====================================================
 
     def search_similar_embeddings(
 
@@ -106,23 +98,23 @@ class EmbeddingRepository(BaseRepository):
 
         embedding: list,
 
-        department: str,
+        job_position: str,
 
-        search_period: str,
+        received_within: str,
 
     ):
 
         filter_query = {
 
-            "department": department
+            "job_position": job_position
 
         }
 
-        if search_period != "ALL":
+        if received_within != "ALL":
 
             now = datetime.utcnow()
 
-            if search_period == "LAST_WEEK":
+            if received_within == "LAST_WEEK":
 
                 filter_query["uploaded_at"] = {
 
@@ -130,7 +122,7 @@ class EmbeddingRepository(BaseRepository):
 
                 }
 
-            elif search_period == "LAST_MONTH":
+            elif received_within == "LAST_MONTH":
 
                 filter_query["uploaded_at"] = {
 
@@ -138,7 +130,7 @@ class EmbeddingRepository(BaseRepository):
 
                 }
 
-            elif search_period == "LAST_3_MONTHS":
+            elif received_within == "LAST_3_MONTHS":
 
                 filter_query["uploaded_at"] = {
 
@@ -146,7 +138,7 @@ class EmbeddingRepository(BaseRepository):
 
                 }
 
-            elif search_period == "LAST_6_MONTHS":
+            elif received_within == "LAST_6_MONTHS":
 
                 filter_query["uploaded_at"] = {
 
@@ -154,7 +146,7 @@ class EmbeddingRepository(BaseRepository):
 
                 }
 
-            elif search_period == "LAST_YEAR":
+            elif received_within == "LAST_YEAR":
 
                 filter_query["uploaded_at"] = {
 
@@ -192,7 +184,7 @@ class EmbeddingRepository(BaseRepository):
 
                     "resume_id": 1,
 
-                    "department": 1,
+                    "job_position": 1,
 
                     "uploaded_at": 1,
 
@@ -218,9 +210,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Count Embeddings
-    # =====================================================
 
     def count_embeddings(
 
@@ -234,9 +224,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Delete All Embeddings
-    # =====================================================
 
     def delete_all_embeddings(
 
@@ -250,9 +238,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Update Embedding
-    # =====================================================
 
     def update_embedding(
 
@@ -286,9 +272,7 @@ class EmbeddingRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Embedding Exists
-    # =====================================================
 
     def embedding_exists(
 

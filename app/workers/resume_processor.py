@@ -94,11 +94,9 @@ class ResumeProcessor:
 
         try:
 
-            # -----------------------------------------
 
             # Generate Resume ID
 
-            # -----------------------------------------
 
             resume_id = str(
 
@@ -106,11 +104,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Download Resume
 
-            # -----------------------------------------
 
             local_resume = self._download_resume(
 
@@ -118,11 +114,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Parse Resume
 
-            # -----------------------------------------
 
             parsed_resume = self._parse_resume(
 
@@ -132,11 +126,9 @@ class ResumeProcessor:
 
             raw_text = parsed_resume["raw_text"]
 
-            # -----------------------------------------
 
             # Generate File Hash
 
-            # -----------------------------------------
 
             file_hash = generate_hash(
 
@@ -144,11 +136,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Duplicate Validation
 
-            # -----------------------------------------
 
             self._check_duplicate(
 
@@ -156,11 +146,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Extract Resume
 
-            # -----------------------------------------
 
             structured_resume = self._extract_resume(
 
@@ -178,11 +166,9 @@ class ResumeProcessor:
 
             ).name
 
-            # -----------------------------------------
 
             # Generate Embedding
 
-            # -----------------------------------------
 
             embedding = self._generate_embedding(
 
@@ -190,11 +176,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Save Profile
 
-            # -----------------------------------------
 
             self._save_profile(
 
@@ -208,11 +192,9 @@ class ResumeProcessor:
 
             )
 
-            # -----------------------------------------
 
             # Save Embedding
 
-            # -----------------------------------------
 
             self._save_embedding(
 
@@ -220,9 +202,9 @@ class ResumeProcessor:
 
                 embedding=embedding,
 
-                department=structured_resume.get(
+                job_position=structured_resume.get(
 
-                    "department",
+                    "job_position",
 
                     "Unknown",
 
@@ -432,7 +414,7 @@ class ResumeProcessor:
         self,
         resume_id: str,
         embedding: list,
-        department: str,
+        job_position: str,
     ):
 
         logger.info(
@@ -444,7 +426,7 @@ class ResumeProcessor:
             embedding=embedding,
             embedding_model=settings.EMBEDDING_MODEL,
             dimension=len(embedding),
-            department=department,
+            job_position=job_position,
             uploaded_at=datetime.utcnow(),
         )
 

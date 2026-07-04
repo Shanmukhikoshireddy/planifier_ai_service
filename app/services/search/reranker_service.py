@@ -42,9 +42,7 @@ class RerankerService:
 
         self.model = RerankerService._model
 
-    # =====================================================
     # Score Single Candidate
-    # =====================================================
 
     def rerank(
 
@@ -74,9 +72,7 @@ class RerankerService:
 
         return float(score)
 
-    # =====================================================
     # Batch Rerank
-    # =====================================================
 
     def rerank_candidates(
 
@@ -132,9 +128,7 @@ class RerankerService:
 
         return candidates
 
-    # =====================================================
     # Top K Candidates
-    # =====================================================
 
     def top_candidates(
 

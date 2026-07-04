@@ -47,9 +47,7 @@ class WebhookService:
             f"Size        : {event.file_size}"
         )
 
-        # -------------------------------------------------
         # Process only upload events
-        # -------------------------------------------------
 
         if not event.event_name.startswith("s3:ObjectCreated"):
 
@@ -59,9 +57,7 @@ class WebhookService:
 
             return
 
-        # -------------------------------------------------
         # Verify object exists
-        # -------------------------------------------------
 
         if not self.minio_repository.file_exists(
             event.object_name,
@@ -77,9 +73,7 @@ class WebhookService:
             "Object verified successfully."
         )
 
-        # -------------------------------------------------
         # Start Resume Processing
-        # -------------------------------------------------
 
         self.resume_processor.process_resume(
 

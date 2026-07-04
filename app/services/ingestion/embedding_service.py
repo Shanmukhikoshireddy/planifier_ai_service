@@ -42,9 +42,7 @@ class EmbeddingService:
 
         self.model = EmbeddingService._model
 
-    # =====================================================
     # Generate Embedding
-    # =====================================================
 
     def generate_embedding(
 
@@ -76,9 +74,7 @@ class EmbeddingService:
 
         return embedding.tolist()
 
-    # =====================================================
     # Batch Embeddings
-    # =====================================================
 
     def generate_embeddings(
 

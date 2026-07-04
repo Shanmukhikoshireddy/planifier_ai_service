@@ -15,9 +15,7 @@ class SearchRepository(BaseRepository):
             "search_results"
         ]
 
-    # =====================================================
     # Save Search Results
-    # =====================================================
 
     def save_search_results(
 
@@ -146,9 +144,7 @@ class SearchRepository(BaseRepository):
 
             )
 
-    # =====================================================
     # Get Search Results
-    # =====================================================
 
     def get_search_results(
 
@@ -184,9 +180,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Get Candidate
-    # =====================================================
 
     def get_candidate(
 
@@ -217,9 +211,7 @@ class SearchRepository(BaseRepository):
 
     )
 
-    # =====================================================
     # Shortlist Candidate
-    # =====================================================
 
     def shortlist_candidate(
 
@@ -255,9 +247,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Reject Candidate
-    # =====================================================
 
     def reject_candidate(
 
@@ -293,9 +283,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Save AI Reasoning
-    # =====================================================
 
     def save_reasoning(
 
@@ -336,9 +324,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Get AI Reasoning
-    # =====================================================
 
     def get_reasoning(
 
@@ -372,9 +358,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Delete Search Results
-    # =====================================================
 
     def delete_search_results(
 
@@ -394,9 +378,7 @@ class SearchRepository(BaseRepository):
 
         )
 
-    # =====================================================
     # Count Search Results
-    # =====================================================
 
     def count_results(
 
@@ -416,9 +398,7 @@ class SearchRepository(BaseRepository):
 
         )
     
-    # =====================================================
     # Get Shortlisted Candidates
-    # =====================================================
 
     def get_shortlisted_candidates(
 
@@ -457,9 +437,7 @@ class SearchRepository(BaseRepository):
         )
 
 
-    # =====================================================
     # Get Rejected Candidates
-    # =====================================================
 
     def get_rejected_candidates(
 

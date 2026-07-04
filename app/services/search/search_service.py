@@ -42,19 +42,17 @@ class SearchService:
 
         self.scoring_service = ScoringService()
 
-    # =====================================================
     # Search
-    # =====================================================
 
     def search(
 
         self,
 
-        department: str,
+        job_position: str,
 
         job_description: str,
 
-        search_period: str,
+        received_within: str,
 
         page: int,
 
@@ -94,9 +92,9 @@ class SearchService:
 
             job=job,
 
-            department=department,
+            job_position=job_position,
 
-            search_period=search_period,
+            received_within=received_within,
 
             page=page,
 
@@ -106,9 +104,7 @@ class SearchService:
 
         )
 
-    # =====================================================
     # Build Job Embedding Text
-    # =====================================================
 
     def build_job_embedding_text(
 
@@ -208,9 +204,7 @@ class SearchService:
 
         )
 
-    # =====================================================
     # Process Job
-    # =====================================================
 
     def process_job(
 
@@ -218,9 +212,9 @@ class SearchService:
 
         job: dict,
 
-        department: str,
+        job_position: str,
 
-        search_period: str,
+        received_within: str,
 
         page: int,
 
@@ -264,7 +258,7 @@ class SearchService:
 
             embedding=job_embedding,
 
-            department=department,
+            job_position=job_position,
 
         )
 
@@ -346,9 +340,9 @@ class SearchService:
 
             embedding=job_embedding,
 
-            department=department,
+            job_position=job_position,
 
-            search_period=search_period,
+            received_within=received_within,
 
         )
 
@@ -368,9 +362,9 @@ class SearchService:
 
             job_embedding=job_embedding,
 
-            department=department,
+            job_position=job_position,
 
-            search_period=search_period,
+            received_within=received_within,
 
             page=page,
 
@@ -380,9 +374,8 @@ class SearchService:
 
         )
     
-        # =====================================================
+
     # Vector Search
-    # =====================================================
 
     def vector_search(
 
@@ -396,9 +389,9 @@ class SearchService:
 
         job_embedding: list,
 
-        department: str,
+        job_position: str,
 
-        search_period: str,
+        received_within: str,
 
         page: int,
 
@@ -418,9 +411,9 @@ class SearchService:
 
             embedding=job_embedding,
 
-            department=department,
+            job_position=job_position,
 
-            search_period=search_period,
+            received_within=received_within,
 
         )
 
@@ -507,9 +500,7 @@ class SearchService:
         )
 
 
-    # =====================================================
     # Rerank Candidates
-    # =====================================================
 
     def rerank_candidates(
 
@@ -584,9 +575,9 @@ Designation
 
 {candidate.get("designation", "")}
 
-Department
+job_position
 
-{candidate.get("department", "")}
+{candidate.get("job_position", "")}
 
 Experience
 
@@ -651,9 +642,8 @@ Current Company
 
         )
     
-        # =====================================================
+
     # Score Candidates
-    # =====================================================
 
     def score_candidates(
 
@@ -983,9 +973,8 @@ Current Company
 
         )
     
-        # =====================================================
+
     # Generate Reasoning
-    # =====================================================
 
     def generate_reasoning(
 
@@ -1089,9 +1078,7 @@ Current Company
         }
 
 
-    # =====================================================
     # Candidate Reasoning
-    # =====================================================
 
     def get_candidate_reasoning(
 
@@ -1193,9 +1180,9 @@ Current Company
             }
 
 
-        # =====================================================
+
         # Build Clean Candidate Context
-        # =====================================================
+
 
         candidate_context = {
 
@@ -1211,9 +1198,9 @@ Current Company
 
             ),
 
-            "department": candidate.get(
+            "job_position": candidate.get(
 
-                "department"
+                "job_position"
 
             ),
 
@@ -1296,9 +1283,9 @@ Current Company
         }
 
 
-        # =====================================================
+
         # Build Clean Job Context
-        # =====================================================
+
 
         job_context = {
 

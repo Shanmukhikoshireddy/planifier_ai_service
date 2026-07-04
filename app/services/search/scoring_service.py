@@ -19,9 +19,7 @@ class ScoringService:
 
         self.certification_weight = settings.CERTIFICATION_WEIGHT
 
-    # =====================================================
     # Semantic Score
-    # =====================================================
 
     def semantic_score(
 
@@ -33,9 +31,7 @@ class ScoringService:
 
         return similarity_score * 100
 
-    # =====================================================
     # Skill Match
-    # =====================================================
 
     def skill_score(
 
@@ -59,9 +55,7 @@ class ScoringService:
 
         ) * 100
 
-    # =====================================================
     # Experience Score
-    # =====================================================
 
     def experience_score(
 
@@ -93,9 +87,7 @@ class ScoringService:
 
         )
 
-    # =====================================================
     # Education Score
-    # =====================================================
 
     def education_score(
 
@@ -107,9 +99,7 @@ class ScoringService:
 
         return 100 if matched else 0
 
-    # =====================================================
     # Certification Score
-    # =====================================================
 
     def certification_score(
 
@@ -121,9 +111,7 @@ class ScoringService:
 
         return 100 if matched else 0
 
-    # =====================================================
     # Final Score
-    # =====================================================
 
     def final_score(
             

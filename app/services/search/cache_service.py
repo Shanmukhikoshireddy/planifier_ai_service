@@ -14,58 +14,50 @@ class CacheService:
 
         self.job_repository = JobRepository()
 
-    # =====================================================
     # Find Similar Job
-    # =====================================================
 
     def find_similar_job(
         self,
         embedding: list,
-        department: str,
+        job_position: str,
         threshold: float = 0.95,
     ):
 
         return self.job_repository.find_similar_job(
             embedding=embedding,
-            department=department,
+            job_position=job_position,
             threshold=threshold,
         )
 
-    # =====================================================
     # Cache Exists
-    # =====================================================
 
     def cache_exists(
         self,
         embedding: list,
-        department: str,
+        job_position: str,
     ) -> bool:
 
         job = self.find_similar_job(
             embedding=embedding,
-            department=department,
+            job_position=job_position,
         )
 
         return job is not None
 
-    # =====================================================
     # Get Cached Job
-    # =====================================================
 
     def get_cached_job(
         self,
         embedding: list,
-        department: str,
+        job_position: str,
     ):
 
         return self.find_similar_job(
             embedding=embedding,
-            department=department,
+            job_position=job_position,
         )
 
-    # =====================================================
     # Mark Cached
-    # =====================================================
 
     def mark_cached(
         self,

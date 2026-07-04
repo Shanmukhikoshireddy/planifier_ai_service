@@ -15,9 +15,7 @@ class ResumeExtractorService:
 
         self.llm = OpenAIService()
 
-    # =====================================================
     # Extract Resume
-    # =====================================================
 
     def extract_resume(
         self,
@@ -58,9 +56,7 @@ class ResumeExtractorService:
 
         return resume
 
-    # =====================================================
     # Prompt
-    # =====================================================
 
     def _build_prompt(
         self,
@@ -84,7 +80,7 @@ Return ONLY JSON.
     "projects":[],
     "certifications":[],
     "designation":"",
-    "department":"",
+    "job_position":"",
     "current_company":""
 }}
 
@@ -105,9 +101,7 @@ Rules
 5. experience_years must be numeric.
 """
 
-    # =====================================================
     # Validate Resume
-    # =====================================================
 
     def _validate_resume(
         self,
@@ -138,7 +132,7 @@ Rules
 
             "designation": "",
 
-            "department": "",
+            "job_position": "",
 
             "current_company": "",
 
@@ -152,9 +146,7 @@ Rules
 
         return resume
 
-    # =====================================================
     # Resume Text for Embedding
-    # =====================================================
 
     def build_embedding_text(
         self,

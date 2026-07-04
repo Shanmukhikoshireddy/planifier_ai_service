@@ -31,7 +31,7 @@ Rules
       "experience_years": 4
       NOT
       "4 years"
-6. Department should be inferred from the candidate's primary technical skills and designation.
+6. job_position should be inferred from the candidate's primary technical skills and designation.
 7. Summary should be a concise professional summary from the resume.
 
 Schema
@@ -59,7 +59,7 @@ Schema
 
     "designation": null,
 
-    "department": null,
+    "job_position": null,
 
     "current_company": null
 }}

@@ -5,7 +5,7 @@ from app.repository.search_repository import SearchRepository
 
 router = APIRouter(
 
-    prefix="/cv-service",
+    prefix="/api/cv-service/cv-service",
 
     tags=["Candidate Actions"],
 
@@ -14,9 +14,7 @@ router = APIRouter(
 search_repository = SearchRepository()
 
 
-# =====================================================
 # Shortlist Candidate
-# =====================================================
 
 @router.post(
 
@@ -65,9 +63,7 @@ def shortlist_candidate(
         )
 
 
-# =====================================================
 # Reject Candidate
-# =====================================================
 
 @router.post(
 
@@ -116,9 +112,7 @@ def reject_candidate(
         )
 
 
-# =====================================================
 # Get Shortlisted Candidates
-# =====================================================
 
 @router.get(
 
@@ -151,9 +145,7 @@ def shortlisted_candidates(
         )
 
 
-# =====================================================
 # Get Rejected Candidates
-# =====================================================
 
 @router.get(
 
