@@ -14,7 +14,7 @@ def health_check():
     # MongoDB
     try:
         db.command("ping")
-        status["mongodb"] = "UP"
+        status["mongodb"] = "UP" 
     except Exception as e:
         status["mongodb"] = f"DOWN : {str(e)}"
 
