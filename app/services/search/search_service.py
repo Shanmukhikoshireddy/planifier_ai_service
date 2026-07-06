@@ -1,20 +1,15 @@
 from app.config.logging import logger
-
 from app.repository.job_repository import JobRepository
 from app.repository.search_repository import SearchRepository
 from app.repository.embedding_repository import EmbeddingRepository
 from app.repository.profile_repository import ProfileRepository
-
 from app.services.shared.openai_service import OpenAIService
 from app.services.ingestion.embedding_service import EmbeddingService
-
 from app.services.search.cache_service import CacheService
 from app.services.search.reranker_service import RerankerService
 from app.services.search.scoring_service import ScoringService
-
 from app.prompts.job_prompt import build_job_prompt
 from app.prompts.reasoning_prompt import build_reasoning_prompt
-
 
 class SearchService:
     def __init__(self):
@@ -38,13 +33,51 @@ class SearchService:
         page_size: int,
     ):
         logger.info("Starting Candidate Search.")
-
-        # Parse Job Description
+        logger.info("RAW JOB DESCRIPTION")
+        logger.info(job_description)
         prompt = build_job_prompt(job_description)
-        job = self.openai_service.generate_json(prompt)
+        job = self.openai_service.generate_json(
+            prompt
+        )
+        logger.info("RAW PARSED JOB")
+        logger.info(job)
 
-        logger.info("Job Parsed Successfully.")
+        # Validate Response
+        if not isinstance(job, dict):
+            raise ValueError(
+                "OpenAI did not return a JSON object."
+            )
 
+        if not job:
+            raise ValueError(
+                "Parsed job is empty."
+            )
+
+        # Ensure Required Keys Exist
+        job.setdefault("title", "")
+        job.setdefault("experience", "")
+        job.setdefault("education", "")
+        job.setdefault("skills", [])
+        job.setdefault("certifications", [])
+        job.setdefault("responsibilities", [])
+        job.setdefault("qualifications", [])
+        job.setdefault("nice_to_have", [])
+        logger.info("FINAL JOB")
+        logger.info(job)
+
+        if not job["title"]:
+            logger.warning(
+                "No title extracted from Job Description."
+            )
+        if not job["skills"]:
+            logger.warning(
+                "No skills extracted from Job Description."
+            )
+        logger.info(
+            "Job Parsed Successfully."
+        )
+
+        # Continue Search
         return self.process_job(
             job=job,
             job_position=job_position,
@@ -53,7 +86,7 @@ class SearchService:
             page_size=page_size,
             raw_job_description=job_description,
         )
-
+    
     # Build Job Embedding Text
     def build_job_embedding_text(
         self,
@@ -68,7 +101,6 @@ class SearchService:
             " ".join(job.get("qualifications",[],)),
             " ".join(job.get("nice_to_have",[],)),
         ]
-
         return "\n".join([
                 section
                 for section in sections
@@ -77,7 +109,6 @@ class SearchService:
         )
 
     # Process Job
-
     def process_job(
         self,
         job: dict,
@@ -99,7 +130,6 @@ class SearchService:
         logger.info("Job embedding generated.")
 
         # Cache Lookup
-
         cached_job = self.cache_service.find_similar_job(
             embedding=job_embedding,
             job_position=job_position,
@@ -130,7 +160,6 @@ class SearchService:
             received_within=received_within,)
 
         logger.info(f"Job Created : {job_id}")
-
         return self.vector_search(
             job_id=job_id,
             job=job,
@@ -143,7 +172,6 @@ class SearchService:
             raw_job_description=raw_job_description,
         )
     
-
     # Vector Search
     def vector_search(
         self,
@@ -158,26 +186,20 @@ class SearchService:
         raw_job_description: str,
     ):
         logger.info("Running Atlas Vector Search...")
-
         vector_results = self.embedding_repository.search_similar_embeddings(
             embedding=job_embedding,
             job_position=job_position,
             received_within=received_within,
         )
-
         logger.info(f"Retrieved {len(vector_results)} candidates.")
-
         candidates = []
         for result in vector_results:
             profile = self.profile_repository.get_profile(result["resume_id"])
-
             if profile is None:
                 continue
             profile["semantic_score"] = result.get("embedding_score",0,)
             candidates.append(profile)
-
         logger.info(f"Loaded {len(candidates)} candidate profiles.")
-
         if not candidates:
             logger.warning("No candidates found.")
             return {
@@ -188,7 +210,6 @@ class SearchService:
                 "total_pages": 0,
                 "results": [],
             }
-
         return self.rerank_candidates(
             job_id=job_id,
             job=job,
@@ -198,7 +219,6 @@ class SearchService:
             page_size=page_size,
             raw_job_description=raw_job_description,
         )
-
 
     # Rerank Candidates
     def rerank_candidates(
@@ -217,50 +237,28 @@ class SearchService:
         for candidate in candidates:
             skills = candidate.get("skills",[],)
             education = candidate.get("education",[],)
-
             projects = candidate.get("projects",[],)
-
             certifications = candidate.get("certifications",[],)
-
             candidate["resume_text"] = f"""
                 Candidate
-
                 {candidate.get("candidate_name", "")}
-
                 Designation
-
                 {candidate.get("designation", "")}
-
                 job_position
-
                 {candidate.get("job_position", "")}
-
                 Experience
-
                 {candidate.get("experience_years", 0)}
-
                 Summary
-
                 {candidate.get("summary", "")}
-
                 Skills
-
                 {' '.join(skills)}
-
                 Education
-
                 {' '.join(education)}
-
                 Projects
-
                 {chr(10).join(projects)}
-
                 Certifications
-
                 {' '.join(certifications)}
-
                 Current Company
-
                 {candidate.get("current_company", "")}
                 """.strip()
 
@@ -269,9 +267,7 @@ class SearchService:
             job_text,
             candidates,
         )
-
         logger.info(f"Reranked {len(candidates)} candidates.")
-
         return self.score_candidates(
             job_id=job_id,
             job=job,
@@ -281,9 +277,7 @@ class SearchService:
             raw_job_description=raw_job_description,
         )
     
-
     # Score Candidates
-
     def score_candidates(
         self,
         job_id: str,
@@ -387,17 +381,14 @@ class SearchService:
             scored_candidates.append(
                 candidate
             )
-        # Sort Candidate
 
+        # Sort Candidate
         scored_candidates.sort(key=lambda x: x["final_score"],reverse=True,)
         total_candidates = len(scored_candidates)
-
         total_pages = (total_candidates + page_size - 1) // page_size
-
         logger.info(
             "ATS Scoring Completed."
         )
-
         return self.generate_reasoning(
             job_id=job_id,
             job=job,
@@ -409,7 +400,6 @@ class SearchService:
             raw_job_description=raw_job_description,
         )
     
-
     # Generate Reasoning
     def generate_reasoning(
         self,
@@ -461,7 +451,6 @@ class SearchService:
             "results": candidates[start:end],
         }
 
-
     # Candidate Reasoning
     def get_candidate_reasoning(
         self,
@@ -472,11 +461,8 @@ class SearchService:
 
         # Cached Reasoning
         reasoning = self.search_repository.get_reasoning(job_id,resume_id,)
-
         if (reasoning and reasoning.get("reasoning_generated",False,)):
-
             logger.info("Reasoning Cache Hit.")
-
             return {
                 "resume_id": resume_id,
                 "reasoning": reasoning.get("reasoning","",),
@@ -494,13 +480,10 @@ class SearchService:
             }
 
         job = self.job_repository.get_job(job_id,)
-
         if job is None:
             return {
                 "message": "Job not found."
             }
-
-
 
         # Build Clean Candidate Context
         candidate_context = {
@@ -530,14 +513,10 @@ class SearchService:
             "nice_to_have": job.get("nice_to_have",[],),
         }
 
-
-        logger.info("=" * 80)
         logger.info("JOB CONTEXT")
         logger.info(job_context)
-        logger.info("=" * 80)
         logger.info("CANDIDATE CONTEXT")
         logger.info(candidate_context)
-        logger.info("=" * 80)
         prompt = build_reasoning_prompt(
             job_context,
             candidate_context,
@@ -551,11 +530,9 @@ class SearchService:
             job_id,
             resume_id,
             reasoning_text,
-
         )
 
         logger.info("Reasoning Generated.")
-
         return {
             "resume_id": resume_id,
             "reasoning": reasoning_text,

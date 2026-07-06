@@ -1,56 +1,49 @@
 import json
-from google import genai
 import time
+from openai import OpenAI
 from app.config.settings import settings
 from app.config.logging import logger
 
 class OpenAIService:
     def __init__(self):
-        logger.info("Initializing Gemini...")
-        self.client = genai.Client(
-            api_key=settings.GEMINI_API_KEY,
+        logger.info("Initializing OpenAI...")
+        self.client = OpenAI(
+            api_key=settings.OPENAI_API_KEY,
         )
-        self.model = settings.GEMINI_MODEL
-
-        logger.info(f"Gemini Model : {self.model}")
-
-    # Generate Text
+        self.model = settings.OPENAI_MODEL
+        logger.info(
+            f"OpenAI Model : {self.model}"
+        )
     def generate(
         self,
         messages,
     ) -> str:
         try:
-            prompt = self._build_prompt(
-                messages
-            )
             for attempt in range(3):
                 try:
-                    response = self.client.models.generate_content(
+                    response = self.client.chat.completions.create(
                         model=self.model,
-                        contents=prompt,
+                        messages=messages,
                     )
-                    return response.text.strip()
+                    content = response.choices[0].message.content
+                    return content.strip()
                 except Exception as e:
                     logger.warning(
-                        f"Gemini attempt {attempt+1} failed.")
-
+                        f"OpenAI attempt {attempt + 1} failed."
+                    )
+                    logger.exception(e)
                     if attempt == 2:
                         raise
                     time.sleep(5)
-            return response.text.strip()
         except Exception as e:
             logger.exception(e)
             raise
-
-    # Generate JSON
     def generate_json(
         self,
         messages,
     ) -> dict:
         response = self.generate(messages)
         response = response.strip()
-
-        # Remove markdown if Gemini returns ```json
         if response.startswith("```"):
             response = response.replace("```json", "")
             response = response.replace("```", "")
@@ -60,38 +53,33 @@ class OpenAIService:
         if start != -1 and end != -1:
             response = response[start:end + 1]
         try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            logger.error("Gemini returned invalid JSON.")
+            parsed = json.loads(response)
+            return parsed
+        except json.JSONDecodeError as e:
+            logger.error("OpenAI returned invalid JSON.")
             logger.error(response)
-            raise ValueError("Invalid JSON returned by Gemini.")
+            logger.exception(e)
+            raise ValueError("Invalid JSON returned by OpenAI.")
 
     # Health Check
-    def health_check(
-        self,
-    ) -> bool:
+    def health_check(self) -> bool:
         try:
-            response = self.client.models.generate_content(
+            response = self.client.chat.completions.create(
                 model=self.model,
-                contents="Reply with OK.",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Reply with exactly OK."
+                    }
+                ],
             )
-            print("Gemini Response:",response.text)
-            return (
-                response.text.strip().upper()
-                == "OK"
-            )
-        except Exception as e:
-            print("Gemini health Error:",e)
-            return False
 
-    # Build Prompt
-    def _build_prompt(
-        self,
-        messages,
-    ) -> str:
-        prompt = ""
-        for message in messages:
-            role = message["role"].upper()
-            content = message["content"]
-            prompt += f"{role}:\n{content}\n\n"
-        return prompt.strip()
+            text = response.choices[0].message.content.strip()
+
+            logger.info(f"Health Check Response: {text}")
+
+            return text.upper() == "OK"
+
+        except Exception as e:
+            logger.exception("OpenAI Health Check Failed")
+            return False

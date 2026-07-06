@@ -1,14 +1,11 @@
 from app.config.settings import settings
 import re
 
-
 class ScoringService:
     """
     Calculates the final ATS score for a candidate.
     """
-
     def __init__(self):
-
         # Weight of MongoDB Atlas Vector Search score
         self.semantic_weight = settings.SEMANTIC_WEIGHT
 

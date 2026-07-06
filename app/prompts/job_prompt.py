@@ -69,7 +69,7 @@ Return only certification names.
 
 Job Description
 
-{{job_description}}
+{job_description}
 """
 
 

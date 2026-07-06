@@ -1,6 +1,5 @@
 import json
 
-
 SYSTEM_PROMPT = """
 You are an experienced Technical Recruiter.
 
@@ -15,68 +14,43 @@ Rules
 5. Keep the explanation concise and professional.
 6. Return plain text only.
 """
-
-
 USER_PROMPT = """
 Job Requirements
-
 {job}
-
-
 Candidate Profile
-
 {candidate}
-
-
 Provide the following analysis:
-
 1. Overall Match Summary
-
 2. Candidate Strengths
-
 3. Matching Skills
-
 4. Missing Skills
-
 5. Experience Match
-
 6. Education Match
-
 7. Certifications
-
 8. Final Recommendation
-
 Keep the explanation within 8-10 short bullet points.
 """
-
 
 def build_reasoning_prompt(
     job: dict,
     candidate: dict,
 ):
-
     return [
-
         {
             "role": "system",
             "content": SYSTEM_PROMPT,
         },
-
         {
             "role": "user",
             "content": USER_PROMPT.format(
-
                 job=json.dumps(
                     job,
                     indent=2,
                 ),
-
                 candidate=json.dumps(
                     candidate,
                     indent=2,
                 ),
-
             ),
         },
-
     ]
