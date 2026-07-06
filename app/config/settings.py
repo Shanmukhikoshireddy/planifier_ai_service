@@ -83,6 +83,13 @@ class Settings(BaseSettings):
 
     )
 
+
+    # =====================================================
+    # Scheduler
+    # =====================================================
+
+    SCHEDULER_INTERVAL: int = 30
+
 @lru_cache
 def get_settings():
 

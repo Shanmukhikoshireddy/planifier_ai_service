@@ -24,28 +24,28 @@ class ResumeProcessor:
 
     Workflow
 
-    MinIO
-        │
-        ▼
+        MinIO
+          │
+          ▼
     Download Resume
-        │
-        ▼
-    Parse Resume
-        │
-        ▼
+          │
+          ▼
+      Parse Resume
+          │
+          ▼
     Duplicate Check
-        │
-        ▼
+          │
+          ▼
     Resume Extraction
-        │
-        ▼
+          │
+          ▼
     Generate Embedding
-        │
-        ▼
-    Save Profile
-        │
-        ▼
-    Save Embedding
+          │
+          ▼
+      Save Profile
+          │
+          ▼
+     Save Embedding
     """
 
     def __init__(self):
@@ -69,91 +69,72 @@ class ResumeProcessor:
     # =====================================================
 
     def process_resume(
-
         self,
-
-        object_name: str,
-
-    ):
-
-        """
-        Process one resume uploaded to MinIO.
-        """
+        object_path: str,
+    ) -> str:
 
         logger.info("=" * 80)
 
         logger.info(
-
-            f"Processing Resume : {object_name}"
-
+            f"Processing Resume : {object_path}"
         )
 
         logger.info("=" * 80)
 
         local_resume = None
 
+        file_hash = ""
+
         try:
 
-
+            # =====================================================
             # Generate Resume ID
-
+            # =====================================================
 
             resume_id = str(
-
                 uuid.uuid4()
-
             )
 
-
+            # =====================================================
             # Download Resume
-
+            # =====================================================
 
             local_resume = self._download_resume(
-
-                object_name
-
+                object_path
             )
 
-
+            # =====================================================
             # Parse Resume
-
+            # =====================================================
 
             parsed_resume = self._parse_resume(
-
                 local_resume
-
             )
 
             raw_text = parsed_resume["raw_text"]
 
-
-            # Generate File Hash
-
+            # =====================================================
+            # Generate SHA-256
+            # =====================================================
 
             file_hash = generate_hash(
-
                 raw_text
-
             )
 
-
+            # =====================================================
             # Duplicate Validation
-
+            # =====================================================
 
             self._check_duplicate(
-
                 file_hash
-
             )
 
-
-            # Extract Resume
-
+            # =====================================================
+            # Extract Structured Resume
+            # =====================================================
 
             structured_resume = self._extract_resume(
-
                 raw_text
-
             )
 
             structured_resume["file_hash"] = file_hash
@@ -161,24 +142,20 @@ class ResumeProcessor:
             structured_resume["raw_text"] = raw_text
 
             structured_resume["file_name"] = Path(
-
-                object_name
-
+                object_path
             ).name
 
-
+            # =====================================================
             # Generate Embedding
-
+            # =====================================================
 
             embedding = self._generate_embedding(
-
                 structured_resume
-
             )
 
-
-            # Save Profile
-
+            # =====================================================
+            # Save Candidate Profile
+            # =====================================================
 
             self._save_profile(
 
@@ -186,15 +163,15 @@ class ResumeProcessor:
 
                 resume=structured_resume,
 
-                resume_path=object_name,
-                file_hash=file_hash,
+                resume_path=object_path,
 
+                file_hash=file_hash,
 
             )
 
-
+            # =====================================================
             # Save Embedding
-
+            # =====================================================
 
             self._save_embedding(
 
@@ -203,40 +180,39 @@ class ResumeProcessor:
                 embedding=embedding,
 
                 job_position=structured_resume.get(
-
                     "job_position",
-
                     "Unknown",
-
                 ),
 
             )
 
             logger.info(
-
-                f"Resume Processed Successfully : {object_name}"
-
+                f"Resume Processed Successfully : {object_path}"
             )
+
+            return file_hash
 
         except ValueError as e:
 
             logger.warning(
-
                 str(e)
-
             )
+
+            return "DUPLICATE"
 
         except Exception as e:
 
             logger.exception(e)
 
+            return ""
+
         finally:
 
             self._cleanup(
-
                 local_resume
-
             )
+
+
 
 
         # =====================================================
@@ -245,29 +221,43 @@ class ResumeProcessor:
 
     def _download_resume(
         self,
-        object_name: str,
+        object_path: str,
     ) -> Path:
+        """
+        Download the resume from MinIO
+        and save it temporarily.
+        """
 
         logger.info(
             "Downloading resume from MinIO..."
         )
 
         resume_bytes = self.minio_repository.download_file(
-            object_name
+            object_path
         )
 
-        temp_dir = Path(settings.TEMP_DIR)
+        temp_dir = Path(
+            settings.TEMP_DIR
+        )
 
         temp_dir.mkdir(
+
             parents=True,
+
             exist_ok=True,
+
         )
 
-        local_file = temp_dir / Path(object_name).name
+        local_resume = temp_dir / Path(
+            object_path
+        ).name
 
         with open(
-            local_file,
+
+            local_resume,
+
             "wb",
+
         ) as file:
 
             file.write(
@@ -275,10 +265,10 @@ class ResumeProcessor:
             )
 
         logger.info(
-            f"Resume downloaded : {local_file.name}"
+            f"Resume downloaded : {local_resume.name}"
         )
 
-        return local_file
+        return local_resume
 
     # =====================================================
     # Parse Resume
@@ -288,6 +278,9 @@ class ResumeProcessor:
         self,
         resume_path: Path,
     ) -> dict:
+        """
+        Parse PDF/DOCX resume into text.
+        """
 
         logger.info(
             "Parsing resume..."
@@ -311,6 +304,10 @@ class ResumeProcessor:
         self,
         file_hash: str,
     ):
+        """
+        Validate duplicate resume.
+        Raises ValueError if duplicate exists.
+        """
 
         logger.info(
             "Checking duplicate..."
@@ -332,6 +329,10 @@ class ResumeProcessor:
         self,
         raw_text: str,
     ) -> dict:
+        """
+        Extract structured information
+        using Gemini.
+        """
 
         logger.info(
             "Extracting structured resume..."
@@ -346,8 +347,9 @@ class ResumeProcessor:
         )
 
         return resume
+    
 
-    # =====================================================
+        # =====================================================
     # Generate Embedding
     # =====================================================
 
@@ -355,6 +357,9 @@ class ResumeProcessor:
         self,
         resume: dict,
     ) -> list:
+        """
+        Generate embedding for the structured resume.
+        """
 
         logger.info(
             "Preparing embedding text..."
@@ -377,9 +382,8 @@ class ResumeProcessor:
         )
 
         return embedding
-    
 
-        # =====================================================
+    # =====================================================
     # Save Candidate Profile
     # =====================================================
 
@@ -390,6 +394,9 @@ class ResumeProcessor:
         resume_path: str,
         file_hash: str,
     ):
+        """
+        Save candidate profile in MongoDB.
+        """
 
         logger.info(
             "Saving candidate profile..."
@@ -416,6 +423,9 @@ class ResumeProcessor:
         embedding: list,
         job_position: str,
     ):
+        """
+        Save embedding into MongoDB Atlas.
+        """
 
         logger.info(
             "Saving embedding..."
@@ -442,9 +452,11 @@ class ResumeProcessor:
         self,
         local_resume: Path | None,
     ):
+        """
+        Delete the temporary downloaded resume.
+        """
 
         if local_resume is None:
-
             return
 
         try:

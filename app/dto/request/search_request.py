@@ -8,6 +8,6 @@ class SearchRequest(BaseModel):
 
     received_within: str = "ALL"
 
-    page: int = 1
+    # page: int = 1
 
-    page_size: int = 20
+    # page_size: int = 20

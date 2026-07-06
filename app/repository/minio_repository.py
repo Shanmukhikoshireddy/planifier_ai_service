@@ -114,22 +114,6 @@ class MinioRepository:
             f"Deleted : {object_name}"
         )
 
-    # List Files
-
-    def list_files(
-        self,
-        prefix: str | None = None,
-    ):
-
-        return list(
-
-            self.client.list_objects(
-                self.bucket,
-                prefix=prefix,
-                recursive=True,
-            )
-
-        )
 
     # Bucket Exists
 
@@ -149,3 +133,33 @@ class MinioRepository:
     ) -> str:
 
         return f"{self.bucket}/{object_name}"
+    
+
+
+
+
+    # =====================================================
+    # List Objects
+    # =====================================================
+
+    def list_objects(
+        self,
+        prefix: str = "resumes/",
+        recursive: bool = True,
+    ):
+        """
+        List all objects inside the bucket.
+
+        Used by the scheduler to discover
+        newly uploaded resumes.
+        """
+
+        return self.client.list_objects(
+
+            bucket_name=self.bucket,
+
+            prefix=prefix,
+
+            recursive=recursive,
+
+        )

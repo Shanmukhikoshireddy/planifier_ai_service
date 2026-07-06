@@ -6,7 +6,7 @@ from app.config.logging import logger
 from app.config.settings import settings
 
 # API Routers
-
+from app.services.minio.scheduler_runner import start_scheduler
 from app.api.health import router as health_router
 from app.api.minio_webhook import router as minio_webhook_router
 from app.api.search import router as search_router
@@ -20,17 +20,24 @@ from app.api.resume import router as resume_router
 async def lifespan(app: FastAPI):
 
     logger.info("=" * 80)
-    logger.info(f"Starting {settings.APP_NAME}")
-    logger.info(f"Version : {settings.APP_VERSION}")
+    logger.info("APPLICATION STARTING")
     logger.info("=" * 80)
+
+    # =====================================================
+    # Start MinIO Scheduler
+    # =====================================================
+
+    start_scheduler()
+
+    logger.info(
+        "MinIO Scheduler Initialized."
+    )
 
     yield
 
     logger.info("=" * 80)
-    logger.info("Stopping Application...")
+    logger.info("APPLICATION SHUTDOWN")
     logger.info("=" * 80)
-
-
 # FastAPI Application
 
 app = FastAPI(
@@ -52,11 +59,11 @@ app.include_router(
 
 )
 
-app.include_router(
+# app.include_router(
 
-    minio_webhook_router,
+#     minio_webhook_router,
 
-)
+# )
 
 app.include_router(
 
@@ -95,7 +102,7 @@ def home():
 
         "version": settings.APP_VERSION,
 
-        "architecture": "MinIO Event Driven",
+        "architecture": "MinIO Scheduler Based",
 
         "status": "Running",
 

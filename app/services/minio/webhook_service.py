@@ -15,9 +15,7 @@ class WebhookService:
 
         self.resume_processor = ResumeProcessor()
 
-    # =====================================================
     # Process MinIO Event
-    # =====================================================
 
     def process_event(
         self,

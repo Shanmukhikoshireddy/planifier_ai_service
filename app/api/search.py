@@ -30,7 +30,7 @@ job_repository = JobRepository()
 
 @router.get(
 
-    "/history",
+    "/feed",
 
 )
 
@@ -40,23 +40,42 @@ def search_history():
 
 # Search Candidates
 
+from fastapi import Query
 
 @router.post("")
-
 def search_candidates(
 
     request: SearchRequest,
+
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Page Number"
+    ),
+
+    page_size: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Candidates Per Page"
+    ),
 
 ):
 
     try:
 
         return search_service.search(
+
             job_position=request.job_position,
+
             job_description=request.job_description,
+
             received_within=request.received_within,
-            page=request.page,
-            page_size=request.page_size,
+
+            page=page,
+
+            page_size=page_size,
+
         )
 
     except Exception as e: 
@@ -73,7 +92,7 @@ def search_candidates(
 
 @router.get(
 
-    "/{job_id}",
+    "/job/{job_id}/all",
 
 )
 

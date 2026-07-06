@@ -5,7 +5,7 @@ from app.repository.search_repository import SearchRepository
 
 router = APIRouter(
 
-    prefix="/api/cv-service/cv-service",
+    prefix="/api/cv-service",
 
     tags=["Candidate Actions"],
 
@@ -18,8 +18,7 @@ search_repository = SearchRepository()
 
 @router.post(
 
-    "/shortlist/{job_id}/{resume_id}",
-
+    "/jd/{job_id}/shortlist/{resume_id}",
 )
 
 def shortlist_candidate(

@@ -17,7 +17,7 @@ async def minio_webhook(
     """
     Receives MinIO ObjectCreated event.
     """
-    try:
+    try: 
         logger.info(
             f"Webhook Received : {event.object_name}"
         )
